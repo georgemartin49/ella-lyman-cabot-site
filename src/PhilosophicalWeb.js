@@ -507,7 +507,7 @@ function DetailView({ name, onBack }) {
 function MainWeb({ onSelect }) {
   const [tip, setTip] = useState(null);
   const isMobile = useIsMobile();
-  const vb = "0 0 " + SZ + " " + SZ;
+  const vb = "-220 -30 1400 1020";
 
   function handleNodeKey(e, hasData, key) {
     if (!hasData) return;
@@ -539,9 +539,9 @@ function MainWeb({ onSelect }) {
         )}
       </div>
 
-      <div style={{ width: "100%", maxWidth: "780px" }}>
-        <svg viewBox={vb} style={{ width: "100%", height: "auto" }} role="img" aria-label="Philosophical web of figures connected to Ella Lyman Cabot. Click or focus a node to explore.">
-          <rect width={SZ} height={SZ} fill={BG} />
+      <div style={{ width: "100%", maxWidth: "1100px" }}>
+        <svg viewBox={vb} style={{ width: "100%", height: "auto", overflow: "visible" }} role="img" aria-label="Philosophical web of figures connected to Ella Lyman Cabot. Click or focus a node to explore.">
+          <rect x="-220" y="-30" width="1400" height="1020" fill={BG} />
 
           {[0,30,60,90,120,150,180,210,240,270,300,330].map(function(deg) {
             const rad = deg * Math.PI / 180;
