@@ -14,9 +14,9 @@ const BG = "#09090F";
 const SURF = "#0F1120";
 const BORD = "#1E2240";
 const GOLD = "#D4A840";
-const MUTED = "#606880";
-const TX = "#C8D0E0";
-const INF = "#506070";
+const MUTED = "#7A8298";
+const TX = "#DCE2EE";
+const INF = "#7188A8";
 const WARN = "#C07840";
 
 const RING_COLORS = ["#7C9EC9","#5CB89E","#8A8FAA","#B87070"];
@@ -322,6 +322,30 @@ const SZ = 960;
 const CX = 480;
 const CY = 480;
 
+
+const pwStyles = `
+  .pw-node { transition: transform 200ms ease; }
+  .pw-node .pw-dot { transition: r 200ms ease, opacity 200ms ease, fill 200ms ease; }
+  .pw-node .pw-ring { transition: r 200ms ease, stroke-opacity 200ms ease, stroke-width 200ms ease; }
+  .pw-node text { transition: fill 200ms ease; }
+  .pw-node-active:hover { transform: translateZ(0); }
+  .pw-node-active:focus-visible {
+    outline: none;
+  }
+  .pw-node-active:focus-visible .pw-dot {
+    stroke: #FFF8E8;
+    stroke-width: 1.5;
+    stroke-opacity: 0.9;
+  }
+  .pw-back:hover, .pw-back:focus-visible { background: rgba(255,255,255,0.06); border-color: #3A4060; outline: none; }
+  .pw-back:focus-visible { box-shadow: 0 0 0 2px rgba(212,168,64,0.5); }
+  .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+  .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: #D4A840; color: #09090F; border-radius: 6px; font-weight: bold; z-index: 100; }
+  @media (prefers-reduced-motion: reduce) {
+    .pw-node, .pw-node .pw-dot, .pw-node .pw-ring, .pw-node text { transition: none !important; }
+  }
+`;
+
 function nodePos(radius, idx, total) {
   const angle = (360 / total) * idx * Math.PI / 180;
   return { x: CX + radius * Math.sin(angle), y: CY - radius * Math.cos(angle) };
@@ -336,7 +360,7 @@ function textAnchor(x) {
 function textX(x) {
   const d = x - CX;
   if (Math.abs(d) < 30) return x;
-  return x + (d > 0 ? 12 : -12);
+  return x + (d > 0 ? 22 : -22);
 }
 
 function findKey(shortName) {
@@ -349,105 +373,133 @@ function findKey(shortName) {
 function DetailView({ name, onBack }) {
   const fig = DATA[name];
   const isMobile = useIsMobile();
+
+  // Escape key returns to the web
+  useEffect(function() {
+    function onKey(e) { if (e.key === "Escape") onBack(); }
+    window.addEventListener("keydown", onKey);
+    return function() { window.removeEventListener("keydown", onKey); };
+  }, [onBack]);
+
   if (!fig) return null;
   const isOuter = fig.ring === 5;
   const ringColor = isOuter ? OUTER_COLOR : (RING_COLORS[fig.ring - 1] || RING_COLORS[0]);
+  const ringLabel = isOuter ? "Outer" : "Ring " + fig.ring;
+
+  const headerInline = isMobile
+    ? { display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px" }
+    : { display: "flex", alignItems: "center", gap: "16px" };
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", fontFamily: "Georgia, serif", display: "flex", flexDirection: "column" }}>
-      <div style={{ background: SURF, borderBottom: "1px solid " + BORD, padding: "11px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
-        <button onClick={onBack}
-          style={{ background: "none", border: "1px solid " + BORD, color: MUTED, padding: "5px 12px", borderRadius: "4px", cursor: "pointer", fontSize: "22px", fontFamily: "Georgia, serif" }}>
-          Back
-        </button>
-        <div>
-          <span style={{ color: ringColor, fontSize: "32px", fontWeight: "bold" }}>{name}</span>
-          <span style={{ color: MUTED, fontSize: "22px", marginLeft: "8px" }}>
-            {isOuter ? "Outer — " : "Ring " + fig.ring + " — "}
-            {fig.dates} — {fig.title}
-          </span>
-        </div>
-      </div>
+    <div style={{ background: BG, minHeight: "100vh", fontFamily: "Georgia, serif", display: "flex", flexDirection: "column", color: TX }}>
+      <a href="#detail-main" className="pw-skip">Skip to content</a>
 
-      <div style={{ padding: "14px", maxWidth: "780px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+      <header style={{ background: SURF, borderBottom: "1px solid " + BORD, padding: isMobile ? "16px" : "16px 24px", ...headerInline }}>
+        <button
+          onClick={onBack}
+          aria-label="Back to philosophical web"
+          className="pw-back"
+          style={{
+            background: "transparent",
+            border: "1px solid " + BORD,
+            color: TX,
+            padding: "10px 18px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "18px",
+            fontFamily: "Georgia, serif",
+            lineHeight: 1.2,
+            flexShrink: 0,
+          }}>
+          ← Back
+        </button>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h2 style={{ color: ringColor, fontSize: isMobile ? "26px" : "30px", fontWeight: "bold", margin: 0, letterSpacing: "0.01em", lineHeight: 1.2 }}>{name}</h2>
+          <p style={{ color: MUTED, fontSize: "16px", margin: "4px 0 0", lineHeight: 1.4 }}>
+            {ringLabel} · {fig.dates} · <em>{fig.title}</em>
+          </p>
+        </div>
+      </header>
+
+      <main id="detail-main" style={{ padding: isMobile ? "16px" : "24px", maxWidth: "820px", margin: "0 auto", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "16px" }}>
 
         {!fig.confirmed && (
-          <div style={{ background: "rgba(192,120,64,0.1)", borderRadius: "8px", border: "1px solid rgba(192,120,64,0.35)", padding: "10px 13px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <span style={{ color: WARN, fontSize: "28px", flexShrink: 0 }}>⚠</span>
+          <aside role="note" style={{ background: "rgba(192,120,64,0.10)", borderRadius: "10px", border: "1px solid rgba(192,120,64,0.35)", padding: "14px 18px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+            <span aria-hidden="true" style={{ color: WARN, fontSize: "24px", flexShrink: 0, lineHeight: 1 }}>⚠</span>
             <div>
-              <p style={{ color: WARN, fontSize: "18px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 3px", fontWeight: "bold" }}>Still Being Updated</p>
-              <p style={{ color: "#A09080", fontSize: "22px", lineHeight: "1.5", margin: 0 }}>
+              <p style={{ color: WARN, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 4px", fontWeight: "bold" }}>Still Being Updated</p>
+              <p style={{ color: "#C0B098", fontSize: "17px", lineHeight: 1.5, margin: 0 }}>
                 {fig.unconfirmedNote || "Some claims in this entry are working hypotheses or inferences pending further archival verification."}
               </p>
             </div>
-          </div>
+          </aside>
         )}
 
-        <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "13px" }}>
-          <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Their Position</p>
-          <p style={{ color: TX, fontSize: "24px", lineHeight: "1.65", margin: 0 }}>{fig.desc}</p>
-        </div>
+        <section aria-label="Their position" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "18px 20px" }}>
+          <h3 style={{ color: MUTED, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 10px", fontWeight: "bold" }}>Their Position</h3>
+          <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.desc}</p>
+        </section>
 
-        <div style={{ background: "rgba(212,168,64,0.07)", borderRadius: "8px", border: "1px solid rgba(212,168,64,0.22)", padding: "13px" }}>
-          <p style={{ color: GOLD, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>★ Connection to ELC</p>
-          <p style={{ color: TX, fontSize: "24px", lineHeight: "1.65", margin: 0 }}>{fig.elc}</p>
-        </div>
+        <section aria-label="Connection to ELC" style={{ background: "rgba(212,168,64,0.08)", borderRadius: "10px", border: "1px solid rgba(212,168,64,0.28)", padding: "18px 20px" }}>
+          <h3 style={{ color: GOLD, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 10px", fontWeight: "bold" }}>★ Connection to ELC</h3>
+          <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.elc}</p>
+        </section>
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
-          <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
-            <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>Influences On Them</p>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
+          <section aria-label="Influences on them" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "18px 20px" }}>
+            <h3 style={{ color: MUTED, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px", fontWeight: "bold" }}>Influences On Them</h3>
             {fig.inf.map(function(item, i) {
               return (
-                <div key={i} style={{ marginBottom: "6px" }}>
-                  <span style={{ color: INF, fontSize: "22px", fontWeight: "600" }}>{item[0]}</span>
-                  <span style={{ color: "#3A4658", fontSize: "20px", display: "block" }}>{item[1]}</span>
+                <div key={i} style={{ marginBottom: "10px" }}>
+                  <span style={{ color: INF, fontSize: "17px", fontWeight: "600" }}>{item[0]}</span>
+                  <span style={{ color: "#6E7A92", fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
                 </div>
               );
             })}
-          </div>
-          <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
-            <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>Transmissions Toward ELC</p>
+          </section>
+          <section aria-label="Transmissions toward ELC" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "18px 20px" }}>
+            <h3 style={{ color: MUTED, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px", fontWeight: "bold" }}>Transmissions Toward ELC</h3>
             {fig.out.map(function(item, i) {
               const isELC = item[0] === "ELC";
               return (
-                <div key={i} style={{ marginBottom: "6px" }}>
-                  <span style={{ color: isELC ? GOLD : ringColor, fontSize: "22px", fontWeight: "600" }}>
+                <div key={i} style={{ marginBottom: "10px" }}>
+                  <span style={{ color: isELC ? GOLD : ringColor, fontSize: "17px", fontWeight: "600" }}>
                     {isELC ? "★ ELC" : item[0]}
                   </span>
-                  <span style={{ color: "#3A4658", fontSize: "20px", display: "block" }}>{item[1]}</span>
+                  <span style={{ color: "#6E7A92", fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
                 </div>
               );
             })}
-          </div>
+          </section>
         </div>
 
-        <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
-          <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 10px" }}>Lineage Flow</p>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <section aria-label="Lineage flow" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "18px 20px" }}>
+          <h3 style={{ color: MUTED, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 14px", fontWeight: "bold" }}>Lineage Flow</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             {fig.inf.slice(0, 3).map(function(item, i) {
               return (
-                <span key={i} style={{ background: "#1A2030", border: "1px solid " + BORD, borderRadius: "4px", padding: "3px 8px", color: INF, fontSize: "20px" }}>
+                <span key={i} style={{ background: "#1A2030", border: "1px solid " + BORD, borderRadius: "6px", padding: "6px 12px", color: INF, fontSize: "15px" }}>
                   {item[0]}
                 </span>
               );
             })}
-            <span style={{ color: MUTED, fontSize: "32px" }}>→</span>
-            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "6px", padding: "4px 10px", color: ringColor, fontSize: "22px", fontWeight: "bold" }}>
+            <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
+            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "6px", padding: "6px 14px", color: ringColor, fontSize: "16px", fontWeight: "bold" }}>
               {name}
             </span>
-            <span style={{ color: MUTED, fontSize: "32px" }}>→</span>
+            <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
             {fig.out.slice(-2).map(function(item, i) {
               const isELC = item[0] === "ELC";
               return (
-                <span key={i} style={{ background: isELC ? "rgba(212,168,64,0.15)" : "#1A2030", border: "1px solid " + (isELC ? GOLD : BORD), borderRadius: "4px", padding: "3px 8px", color: isELC ? GOLD : TX, fontSize: "20px", fontWeight: isELC ? "bold" : "normal" }}>
+                <span key={i} style={{ background: isELC ? "rgba(212,168,64,0.15)" : "#1A2030", border: "1px solid " + (isELC ? GOLD : BORD), borderRadius: "6px", padding: "6px 12px", color: isELC ? GOLD : TX, fontSize: "15px", fontWeight: isELC ? "bold" : "normal" }}>
                   {item[0]}
                 </span>
               );
             })}
           </div>
-        </div>
+        </section>
 
-      </div>
+      </main>
     </div>
   );
 }
@@ -457,28 +509,38 @@ function MainWeb({ onSelect }) {
   const isMobile = useIsMobile();
   const vb = "0 0 " + SZ + " " + SZ;
 
+  function handleNodeKey(e, hasData, key) {
+    if (!hasData) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelect(key);
+    }
+  }
+
   return (
-    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: "14px", fontFamily: "Georgia, serif" }}>
-      <h1 style={{ color: "#E8D5A0", fontSize: "38px", fontWeight: "bold", margin: "0 0 2px", letterSpacing: "0.04em" }}>
+    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "20px 14px" : "32px 20px", fontFamily: "Georgia, serif", color: TX }}>
+      <style>{pwStyles}</style>
+
+      <h1 style={{ color: "#E8D5A0", fontSize: isMobile ? "30px" : "38px", fontWeight: "bold", margin: "0 0 6px", letterSpacing: "0.04em", textAlign: "center", lineHeight: 1.15 }}>
         The Philosophical Web
       </h1>
-      <p style={{ color: MUTED, fontSize: "20px", margin: "0 0 2px" }}>
+      <p style={{ color: MUTED, fontSize: isMobile ? "16px" : "19px", margin: "0 0 6px", textAlign: "center", maxWidth: "720px", lineHeight: 1.4 }}>
         Ella Lyman Cabot · Interest, the Achieved Self, and the Conditions of Selfhood
       </p>
-      <p style={{ color: "#3A4060", fontSize: "18px", fontStyle: "italic", margin: "0 0 8px" }}>
+      <p style={{ color: "#6A7090", fontSize: "15px", fontStyle: "italic", margin: "0 0 14px", textAlign: "center" }}>
         Working document — still being updated · Tap any node to explore lineages
       </p>
 
-      <div style={{ minHeight: "26px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px", maxWidth: "640px", textAlign: "center" }}>
+      <div role="status" aria-live="polite" style={{ minHeight: "40px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "8px", maxWidth: "640px", textAlign: "center", padding: "0 12px" }}>
         {tip && (
-          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "4px", padding: "3px 11px", color: "#B8C0D8", fontSize: "20px" }}>
+          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "6px", padding: "6px 16px", color: "#D2D8EA", fontSize: "16px" }}>
             {tip}
           </div>
         )}
       </div>
 
-      <div style={{ width: "100%", maxWidth: "760px" }}>
-        <svg viewBox={vb} style={{ width: "100%", height: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "780px" }}>
+        <svg viewBox={vb} style={{ width: "100%", height: "auto" }} role="img" aria-label="Philosophical web of figures connected to Ella Lyman Cabot. Click or focus a node to explore.">
           <rect width={SZ} height={SZ} fill={BG} />
 
           {[0,30,60,90,120,150,180,210,240,270,300,330].map(function(deg) {
@@ -488,25 +550,25 @@ function MainWeb({ onSelect }) {
                 x1={CX} y1={CY}
                 x2={CX + 490 * Math.sin(rad)}
                 y2={CY - 490 * Math.cos(rad)}
-                stroke="#ffffff" strokeWidth="0.3" strokeOpacity="0.03" />
+                stroke="#ffffff" strokeWidth="0.4" strokeOpacity="0.04" />
             );
           })}
 
           {RINGS_CFG.map(function(ring, ri) {
             return (
               <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
-                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.7" strokeOpacity="0.18" />
+                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.8" strokeOpacity="0.20" />
             );
           })}
 
           <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
-            fill="none" stroke={OUTER_COLOR} strokeWidth="0.8" strokeOpacity="0.28"
+            fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.30"
             strokeDasharray="9 5" />
 
-          <circle cx={CX} cy={CY} r="52" fill={GOLD} opacity="0.1" />
-          <circle cx={CX} cy={CY} r="42" fill={GOLD} opacity="0.93" />
-          <text x={CX} y={CY - 5} textAnchor="middle" fill="#FFF8E8" fontSize="28" fontWeight="bold">ELC</text>
-          <text x={CX} y={CY + 10} textAnchor="middle" fill="#FFF8E8" fontSize="15" opacity="0.8">1866–1934</text>
+          <circle cx={CX} cy={CY} r="60" fill={GOLD} opacity="0.10" />
+          <circle cx={CX} cy={CY} r="48" fill={GOLD} opacity="0.95" />
+          <text x={CX} y={CY + 4} textAnchor="middle" fill="#FFF8E8" fontSize="26" fontWeight="bold" letterSpacing="2">ELC</text>
+          <text x={CX} y={CY + 28} textAnchor="middle" fill="#FFF8E8" fontSize="13" opacity="0.85" letterSpacing="1">1866–1934</text>
 
           {RINGS_CFG.map(function(ring, ri) {
             const col = RING_COLORS[ri];
@@ -517,27 +579,34 @@ function MainWeb({ onSelect }) {
               const isHov = tip === name;
               return (
                 <g key={ring.label + ni}
+                  className={"pw-node" + (hasData ? " pw-node-active" : "")}
+                  role={hasData ? "button" : undefined}
+                  tabIndex={hasData ? 0 : undefined}
+                  aria-label={hasData ? "View " + name : undefined}
                   onMouseEnter={function() { setTip(name); }}
                   onMouseLeave={function() { setTip(null); }}
+                  onFocus={function() { setTip(name); }}
+                  onBlur={function() { setTip(null); }}
                   onClick={function() { if (hasData) onSelect(key); }}
-                  style={{ cursor: hasData ? "pointer" : "default" }}>
-                  {hasData && !isHov && (
-                    <circle cx={p.x} cy={p.y} r="10"
-                      fill="none" stroke={col} strokeWidth="0.9" strokeOpacity="0.5" />
-                  )}
-                  {isHov && (
-                    <circle cx={p.x} cy={p.y} r="13"
-                      fill="none" stroke={col} strokeWidth="1.2" strokeOpacity="0.7" />
+                  onKeyDown={function(e) { handleNodeKey(e, hasData, key); }}
+                  style={{ cursor: hasData ? "pointer" : "default", outline: "none" }}>
+                  {hasData && (
+                    <circle cx={p.x} cy={p.y} r={isHov ? 14 : 11}
+                      fill="none" stroke={col}
+                      strokeWidth={isHov ? 1.4 : 1.0}
+                      strokeOpacity={isHov ? 0.8 : 0.5}
+                      className="pw-ring" />
                   )}
                   <circle cx={p.x} cy={p.y}
                     r={isHov ? 9 : 6}
                     fill={col}
-                    opacity={isHov ? 0.95 : 0.7} />
+                    opacity={isHov ? 1 : 0.75}
+                    className="pw-dot" />
                   <text
-                    x={textX(p.x)} y={p.y + 4}
+                    x={textX(p.x)} y={p.y + 6}
                     textAnchor={textAnchor(p.x)}
-                    fill={isHov ? col : "#B0B8D0"}
-                    fontSize="20"
+                    fill={isHov ? col : "#C2CADD"}
+                    fontSize="18"
                     fontWeight={isHov ? "bold" : "normal"}>
                     {name}
                   </text>
@@ -553,27 +622,34 @@ function MainWeb({ onSelect }) {
             const isHov = tip === name;
             return (
               <g key={"o" + ni}
+                className={"pw-node" + (hasData ? " pw-node-active" : "")}
+                role={hasData ? "button" : undefined}
+                tabIndex={hasData ? 0 : undefined}
+                aria-label={hasData ? "View " + name : undefined}
                 onMouseEnter={function() { setTip(name); }}
                 onMouseLeave={function() { setTip(null); }}
+                onFocus={function() { setTip(name); }}
+                onBlur={function() { setTip(null); }}
                 onClick={function() { if (hasData) onSelect(key); }}
-                style={{ cursor: hasData ? "pointer" : "default" }}>
-                {hasData && !isHov && (
-                  <circle cx={p.x} cy={p.y} r="9"
-                    fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.5" />
-                )}
-                {isHov && (
-                  <circle cx={p.x} cy={p.y} r="11"
-                    fill="none" stroke={OUTER_COLOR} strokeWidth="1.2" strokeOpacity="0.7" />
+                onKeyDown={function(e) { handleNodeKey(e, hasData, key); }}
+                style={{ cursor: hasData ? "pointer" : "default", outline: "none" }}>
+                {hasData && (
+                  <circle cx={p.x} cy={p.y} r={isHov ? 12 : 10}
+                    fill="none" stroke={OUTER_COLOR}
+                    strokeWidth={isHov ? 1.4 : 1.0}
+                    strokeOpacity={isHov ? 0.8 : 0.5}
+                    className="pw-ring" />
                 )}
                 <circle cx={p.x} cy={p.y}
                   r={isHov ? 7 : 5}
                   fill={isHov ? OUTER_COLOR : "#7E6EAA"}
-                  opacity="0.9" />
+                  opacity="0.92"
+                  className="pw-dot" />
                 <text
-                  x={textX(p.x)} y={p.y + 4}
+                  x={textX(p.x)} y={p.y + 6}
                   textAnchor={textAnchor(p.x)}
-                  fill={isHov ? OUTER_COLOR : "#9890B8"}
-                  fontSize="19">
+                  fill={isHov ? OUTER_COLOR : "#A89FC8"}
+                  fontSize="16">
                   {name}
                 </text>
               </g>
@@ -582,7 +658,7 @@ function MainWeb({ onSelect }) {
         </svg>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px 18px", maxWidth: "520px", width: "100%", marginTop: "8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px", maxWidth: "560px", width: "100%", marginTop: "20px" }}>
         {[
           { color: RING_COLORS[0], label: "Ring I — Closest Allies" },
           { color: RING_COLORS[1], label: "Ring II — Substantial Agreement" },
@@ -592,20 +668,20 @@ function MainWeb({ onSelect }) {
           { color: GOLD,           label: "ELC — Starting Point" },
         ].map(function(item, i) {
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
-              <span style={{ color: MUTED, fontSize: "18px" }}>{item.label}</span>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <span style={{ color: "#A0A8BE", fontSize: "15px" }}>{item.label}</span>
             </div>
           );
         })}
       </div>
 
-      <div style={{ marginTop: "10px", maxWidth: "440px", width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", background: "rgba(192,120,64,0.07)", border: "1px solid rgba(192,120,64,0.2)", borderRadius: "6px", padding: "8px 12px" }}>
-        <span style={{ color: WARN, fontSize: "24px", flexShrink: 0 }}>⚠</span>
-        <p style={{ color: "#807060", fontSize: "18px", lineHeight: "1.5", margin: 0 }}>
-          <strong style={{ color: WARN }}>Still Being Updated.</strong> Entries marked with ⚠ in the detail view contain claims that are working hypotheses or inferences pending archival verification. All other entries draw from established scholarship and primary sources.
+      <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: "rgba(192,120,64,0.08)", border: "1px solid rgba(192,120,64,0.25)", borderRadius: "8px", padding: "12px 16px", boxSizing: "border-box" }}>
+        <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
+        <p style={{ color: "#9E8E78", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+          <strong style={{ color: WARN }}>Still Being Updated.</strong> Entries marked ⚠ in detail view contain claims that are working hypotheses or inferences pending archival verification. All other entries draw from established scholarship and primary sources.
         </p>
-      </div>
+      </aside>
 
     </div>
   );
