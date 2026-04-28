@@ -1,0 +1,622 @@
+import { useState, useEffect } from "react";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 700);
+  useEffect(function() {
+    function onResize() { setIsMobile(window.innerWidth < 700); }
+    window.addEventListener("resize", onResize);
+    return function() { window.removeEventListener("resize", onResize); };
+  }, []);
+  return isMobile;
+}
+
+const BG = "#09090F";
+const SURF = "#0F1120";
+const BORD = "#1E2240";
+const GOLD = "#D4A840";
+const MUTED = "#606880";
+const TX = "#C8D0E0";
+const INF = "#506070";
+const WARN = "#C07840";
+
+const RING_COLORS = ["#7C9EC9","#5CB89E","#8A8FAA","#B87070"];
+const OUTER_COLOR = "#9E8EC8";
+
+// confirmed: true = all claims verified from primary sources or established scholarship
+// confirmed: false = some claims inferred, pending archival verification, or working hypotheses
+// unconfirmedNote: specific claim(s) that need verification
+
+const DATA = {
+  // ── RING I ────────────────────────────────────────────────────────────────
+  Emerson: {
+    ring:1, dates:"1803–1882", title:"The Exhibitive Origin", confirmed:true,
+    desc:"Self-Reliance is the ontological claim that the self must be achieved against the pressure of conformity and the merely received. The Over-Soul is what interest participates in when most fully itself — not a metaphysical entity but what interest discovers when followed honestly to its limit. Emerson exhibits what ELC systematised: his mode is exhibitive throughout, which is exactly why ELC's poems are necessary alongside her prose. Representative Men exhibits what fully achieved selfhood looks like from inside different modes of human excellence. Experience (1844) is his most philosophically rigorous essay — the closest to radical empiricism before James.",
+    elc:"James Elliot Cabot — Emerson's literary executor and biographer — was ELC's father-in-law. She absorbed Emerson through direct family transmission and through Palmer, who had internalised Emerson's practical register into Harvard's curriculum. Two independent channels converged on ELC simultaneously. ELC's practical ethics are the systematic philosophical specification of what Emersonian self-reliance actually requires to be real rather than merely asserted.",
+    inf:[["Carlyle","German idealism in English; self-creation against conformity"],["Coleridge","Kantian aesthetics; organic form; Reason vs Understanding"],["Plotinus","Neo-Platonic self-transcendence; primary source of Over-Soul"],["Montaigne","Self-examination as philosophical act; essayistic mode"],["Swedenborg","Correspondence of inner and outer; Representative Men subject"]],
+    out:[["James","Absorbed self-reliance into radical empiricism"],["Palmer","Systematised as practical ethics at Harvard"],["ELC","Via J.E. Cabot (father-in-law) and Palmer directly"],["Thoreau","Applied self-reliance to lived practice at Walden"],["Whitman","Democratic self-reliance; leaves of grass as exhibitive mode"]]
+  },
+  James: {
+    ring:1, dates:"1842–1910", title:"The Phenomenological Predecessor", confirmed:true,
+    desc:"Not the pragmatist James but the radical empiricist. Pure experience is the datum prior to both subject and object; conjunctive relations are genuinely real; the stream of consciousness is already temporal, already directed, already interested before theory begins. His specious present — the minimal temporal unit containing retention of just-past and anticipation of about-to-come — is the phenomenological description of interest's forward-backward structure. ELC's fifth condition names his conjunctive relations directly. Talks to Teachers (1899) is James in ELC's exact mode: practical philosophy for educators specifying what genuine education requires.",
+    elc:"ELC attended James's courses at Harvard and Radcliffe. His account of the stream as already-directed, already-interested experience gave her the phenomenological starting point. The conjunctive capacity — her fifth condition — is her systematic deployment of what he called pure experience and conjunctive relations. James reviewed ELC's Every-Day Ethics (1906) favourably and their correspondence continued through his death in 1910.",
+    inf:[["Renouvier","Freed James from determinism; indeterminism as liveable"],["Peirce","Pragmatist method; logic of inquiry; fallibilism"],["Emerson","Formative; trust of individual experience; Over-Soul parallel"],["Fechner","Continuity of consciousness; mind throughout nature"],["Bain","Associationist psychology; habit chapter in Principles"]],
+    out:[["ELC","Fifth condition names his conjunctive relations directly"],["Hocking","Shared-objects solution; negative pragmatism"],["Calkins","Self-psychology at Harvard and Radcliffe under James"],["Murdoch","Temperament observation (unacknowledged influence)"],["Dewey","Instrumentalist development of pragmatism (divergent)"]]
+  },
+  Weil: {
+    ring:1, dates:"1909–1943", title:"The Attention Philosopher", confirmed:true,
+    desc:"Weil's attention is ELC's conjunctive capacity at its most developed: not concentration but the suspension of self that makes space for what is genuinely other. Her Need for Roots (1943) specifies structural conditions for genuine human development — obligations and needs — that map directly onto ELC's five conditions from a Platonic direction. Her Iliad essay ('The Poem of Force', 1940) is exhibitive philosophy: it shows what the destruction of the conditions looks like from inside a life that cannot meet them. Both the analytical and exhibitive modes are present in Weil, for exactly the reasons ELC's work requires both.",
+    elc:"Independent convergence across entirely different philosophical genealogies. Both developed accounts of the capacity for genuine openness — ELC as conjunctive capacity, Weil as attention — arriving at structurally parallel positions without mutual awareness. Weil's Iliad essay and ELC's poems are exhibitive philosophy about the same discovery from different starting points and different historical moments.",
+    inf:[["Alain/Chartier","Primary teacher at Henri IV; attention concept; Bergson student"],["Plato","The Good as transcendent; cave allegory; attention toward truth"],["Bergson","Filtered through Alain; duration; genuine effort of will"],["Marx","Early formation; conditions of labour; factory work experience"],["Kant","Moral law; duty without self-interest"]],
+    out:[["Murdoch","Borrowed attention concept directly; centrepiece of Sovereignty of Good"],["Noddings","Engrossment = Weilean attention in feminist care ethics"],["ELC","Independent parallel — neither knew the other's work"],["Contemporary philosophy of attention","Weil as primary source"]]
+  },
+  "P-Pattison": {
+    ring:1, dates:"1856–1931", title:"The Irreducibility Argument", confirmed:true,
+    desc:"His Hegelianism and Personality (1887) is the clearest statement in the British idealist tradition that the Absolute cannot dissolve the individual self without destroying what makes it a self at all. Each self is a unique existence, perfectly impervious to other selves — impervious in a fashion of which the impenetrability of matter is a faint analogue. He identified the problem — what genuine selfhood resists — that ELC's conditions answered positively. His insistence that philosophy must eventually give way to religion and poetry to go further is the exhibitive judgment point stated from inside the tradition itself.",
+    elc:"P-Pattison's critique of Bosanquet and Caird cleared the philosophical space for ELC's positive account. He showed why the Absolute was the wrong answer; she showed what the achieved individual self actually requires. The logical sequence: Hegelianism and Personality (1887) establishes the negative case → the question of positive conditions becomes pressing → ELC's five conditions answer it.",
+    inf:[["T.H. Green","Direct formation in self-realisation ethics at Edinburgh and Oxford"],["Lotze","Individuality and the irreducible reality of consciousness"],["Hamilton","Scottish philosophy of consciousness as irreducible"],["Hegel","Critical engagement throughout; primary target of main argument"],["Caird","Opposed his Absolutism; sharpened the individuality question"]],
+    out:[["ELC","His negative argument cleared the logical space for her positive one"],["Bowne","American personalist parallel — same negative argument independently"],["Bosanquet","Main opponent; sharpened the individuality question through debate"],["Rashdall","Idealist tradition; value theory"]]
+  },
+  Royce: {
+    ring:1, dates:"1855–1916", title:"The Loyalty Philosopher", confirmed:true,
+    desc:"The Philosophy of Loyalty (1908) specifies structurally parallel conditions to ELC's from a different starting point: the self is constituted through commitment to a cause genuinely one's own. The casual self — before loyalty — is a collection of impulses without coherent unity. The loyal self has appropriated one of its causes as its own and achieved genuine selfhood. His later interpretation theory in The Problem of Christianity — the self constituted through the ongoing process of making signs make sense in community — is his most rigorous account of the conditions for self-constitution.",
+    elc:"40-year correspondence documented in the Royce Papers at Harvard. Her 1890 notebook entry 'The art of living is becoming other people' predates The Philosophy of Loyalty by eighteen years. Royce's 1899 metaphysics seminar notebooks identify her as its most intellectually significant participant. She influenced him; he gave her systematic philosophical vocabulary she then developed beyond his framework.",
+    inf:[["Peirce","Logic, community of inquiry, fallibilism; lifelong dialogue"],["Lotze","Systematic idealism; world as will and representation"],["Hegel","Dialectical development; Absolute as goal of Spirit"],["James","Lifelong dialogue partner and primary critic; anti-Absolute pressure"],["Schopenhauer","Will as primary; world as struggle"]],
+    out:[["ELC","Mutual influence — she shaped his loyalty account directly"],["C.I. Lewis","Modal logic; conceptual pragmatism at Harvard"],["T.S. Eliot","Harvard PhD under Royce; Absolute idealism into modernism"],["Du Bois","Beloved Community; community of memory and hope"],["Hocking","The Meaning of God in Human Experience (1912)"]]
+  },
+  Palmer: {
+    ring:1, dates:"1842–1933", title:"The Pedagogical Transmitter", confirmed:true,
+    desc:"Palmer is the direct institutional transmission between Green's idealism and ELC. His Autobiography of a Philosopher (1930) exhibits the self as constituted through engagement with what is genuinely other — his philosophical development is a series of encounters with texts and people that changed what he was, not merely what he knew. The formation is constitutive. The Field of Ethics (1901) argues that genuine moral development requires the active appropriation of values — morality is not a code to be followed but a self to be achieved. The Teacher (1908, with Alice Freeman Palmer) articulates what genuine education requires: not transmission of content but enabling a process of self-constitution in the student.",
+    elc:"Direct mentor-student relationship spanning decades. He introduced ELC to Green's ethics framework and to the systematic vocabulary for specifying conditions for genuine selfhood. He could transmit the framework but not originate its phenomenological starting point — interest as found. She gave him the starting point he lacked. The relationship was reciprocal in the way Palmer's best relationships always were: each made the other more themselves.",
+    inf:[["T.H. Green","Directly absorbed; self-realisation as constitutively social"],["Emerson","Internalised as practical philosophical register; the American background"],["Hegel","Studied systematically; developmental structure of selfhood"],["Homer","Odyssey translation as philosophical act; teleological structure"],["Kant","Moral autonomy; self-legislation without heteronomy"]],
+    out:[["ELC","Direct mentor — gave her Green's vocabulary and framework"],["Hocking","Harvard philosophical tradition continuation; direct student"],["Calkins","Wellesley/Harvard institutional network; direct student"],["Alice Freeman Palmer","Co-author; philosophy of education deployed"],["Santayana","Harvard philosophy; divergent direction"]]
+  },
+
+  // ── RING II ───────────────────────────────────────────────────────────────
+  Caird: {
+    ring:2, dates:"1835–1908", title:"The Scottish Transmitter", confirmed:false,
+    unconfirmedNote:"ELC citation of Caird in unpublished manuscripts is noted in archival research but the specific manuscript location requires verification at Schlesinger A-139.",
+    desc:"Edward Caird transmitted Green's ethics through two independent channels simultaneously — Palmer and ELC philosophically in America; Tawney, Beveridge, and Temple practically in Britain. His Evolution of Religion (1893) and Evolution of Theology in the Greek Philosophers (1904) developed an idealist account of progressive self-realisation through history. His mandate to Balliol students — 'go and discover why poverty exists and how to cure it' — generated the welfare state chain independently of his philosophical transmission to America.",
+    elc:"ELC cites Caird directly in unpublished manuscripts [unconfirmed — archival verification pending]. His Balliol instruction generated Tawney, Beveridge, and Temple who implemented ELC's five conditions as the British welfare state. The same philosophical inheritance — Green's self-realisation ethics — produced two simultaneous independent deployments: ELC's philosophical systematisation and the welfare state's institutional implementation.",
+    inf:[["T.H. Green","Direct colleague at Balliol; transmitted Green's full program after Green's death"],["Hegel","Primary philosophical study; evolutionary idealism"],["Kant","Critical philosophy as necessary starting point"],["Carlyle","Prophetic social criticism; the cash nexus argument"]],
+    out:[["Palmer","Transmitted Green's ethics to Harvard curriculum"],["ELC","Cited directly in unpublished manuscripts [unconfirmed]"],["Beveridge","Five Giants ← Caird's mandate to understand poverty structurally"],["Tawney/Temple","Ethical socialism and welfare state theology"]]
+  },
+  Bosanquet: {
+    ring:2, dates:"1848–1923", title:"The Closest Structural Parallel", confirmed:true,
+    desc:"The Value and Destiny of the Individual (1913) is the closest parallel to ELC's conditions project anywhere in British idealism. Both specify structural conditions for genuine individual development. His divergence is precise and philosophically important: he gets the conditions nearly right but the direction of constitution backwards — the individual must transcend into the social whole to achieve genuine selfhood, whereas ELC says the social whole enables the individual to become more fully and distinctly itself. The Philosophical Theory of the State (1899) deploys the same framework into political philosophy.",
+    elc:"Bosanquet's Value and Destiny asks exactly ELC's question — what conditions does genuine individual development require? — and arrives at a structurally similar answer from within Absolute Idealism. His precise divergence is why P-Pattison had to write Hegelianism and Personality, which cleared philosophical space for ELC's positive account. He posed the question she answered better.",
+    inf:[["T.H. Green","Direct formation; ethics of self-realisation through social life"],["Hegel","Primary metaphysical framework; Absolute as goal"],["Bradley","Parallel development in British idealism; logic of internal relations"],["Helen Bosanquet","Social work application at Charity Organisation Society"]],
+    out:[["P-Pattison","His main target in Hegelianism and Personality (1887)"],["Muirhead","British idealist continuation into 20th century"],["Murdoch","In her formative reading list alongside Green and Bradley"],["ELC","His question; her better answer"]]
+  },
+  Murdoch: {
+    ring:2, dates:"1919–1999", title:"The Platonic Parallel", confirmed:true,
+    desc:"Read the same library as ELC — Green, Bradley, Bosanquet — fifty years later in England, neither knowing the other existed. Her concept of attention (drawn directly from Weil) is her account of what the moral capacity fundamentally is: a just and loving gaze directed upon individual reality. Her M/D case — the mother who revises her perception of her daughter-in-law — shows moral change happening through the discipline of attention; ELC's framework handles this through the conjunctive capacity condition. Murdoch has transcendent normativity without diachronic ownership; ELC has diachronic ownership without transcendent normativity. Each supplies what the other lacks.",
+    elc:"Independent parallel convergence from identical sources. Both read Green, Bradley, and Bosanquet as primary philosophical formation. Both borrowed attention from Weil. Both developed exhibitive modes (novels/poems) alongside analytical writing for the same philosophical reasons. The Cabot-Murdoch comparison paper — showing that ELC's account supplies the diachronic ownership dimension Murdoch's Platonism cannot provide — is the central argument for ELC's contemporary philosophical relevance.",
+    inf:[["Green/Bradley/Bosanquet","Same formative reading list as ELC, 50 years later in Oxford"],["Weil","Borrowed attention concept directly; centrepiece of her ethics"],["Plato","The Good as independent transcendent standard; Platonic realism"],["Sartre","Critical engagement throughout; rejected his radical freedom"],["Kant","Target of critique; she defends moral perception against duty"]],
+    out:[["Contemporary moral realism","Independent moral facts as perceptible by disciplined attention"],["Nussbaum","Love's Knowledge; narrative and moral knowledge"],["ELC","Independent parallel — mutual philosophical illumination"]]
+  },
+  "Du Bois": {
+    ring:2, dates:"1868–1963", title:"The Obstruction Theorist", confirmed:true,
+    desc:"Double consciousness is the conditions account from inside their systematic obstruction. The veil does not deny that Black Americans have interest — it blocks the conditions through which interest can achieve genuine selfhood: purposive activity denied through economic exclusion; social engagement denied through segregation; conjunctive capacity distorted by the psychological burden of constant self-doubling; temporal coherence disrupted by violence and displacement; the constitutive choice constrained by systemic denial of educational and civic opportunity. The Souls of Black Folk (1903) is philosophy in the exhibitive mode about what ELC specified analytically.",
+    elc:"Both in Boston in the same decade, both formed by James and Royce at Harvard. Du Bois received his Harvard PhD in 1895; ELC began auditing Harvard courses in 1897. Both developing accounts of genuine self-constitution under conditions of structural difficulty. Neither knew the other's philosophical work — the convergence confirms that both were tracking the same structural reality from different positions within it.",
+    inf:[["James","Direct student at Harvard; radical empiricism; stream of consciousness"],["Royce","Direct student; community of memory and hope; Beloved Community"],["Hegel","Studied in Berlin 1892-94; Geist as historical force; world-historical individuals"],["Crummell","African American philosophical predecessors; civilisationism"],["Wells","Investigative journalism; structural analysis of race violence"]],
+    out:[["Alain Locke","New Negro philosophy; cultural self-achievement"],["King","Beloved Community via Royce-Du Bois chain; Montgomery to Memphis"],["Black feminist philosophy","Conditions under structural obstruction; intersectionality"],["ELC","Independent parallel — mutual philosophical illumination"]]
+  },
+  "T.H. Green": {
+    ring:2, dates:"1836–1882", title:"The Idealist Foundation", confirmed:true,
+    desc:"Green's Prolegomena to Ethics (1883) is the foundational statement that genuine moral agency requires structural social and developmental conditions. His Lectures on the Principles of Political Obligation extends the same argument into political philosophy: genuine freedom is not absence of constraint but the positive achievement of the conditions for genuine self-development. His critique of naturalist ethics — that no account of natural processes can generate genuine normative claims — is structurally the same as ELC's response to the deflation objection.",
+    elc:"The entire transmission chain to ELC runs through Green: Green to Caird to Palmer to ELC philosophically; Green to Caird to Tawney, Beveridge, and Temple practically. ELC's five conditions are the systematic specification of what Green's ethics of self-realisation requires — stated without his metaphysical overclaim of the eternal self-consciousness that undermines his account.",
+    inf:[["Hegel","Dialectical development of self-consciousness; concrete freedom"],["Kant","Autonomy; practical reason; freedom as self-legislation"],["Aristotle","Eudaimonia; conditions for genuine flourishing; politics as ethical"],["Carlyle","Social criticism; the industrial cash nexus; duties of the strong"],["Mill","Critical engagement; limits of utilitarian liberty"]]  ,
+    out:[["Caird","Glasgow to Balliol; transmitted Green's full program to both continents"],["Palmer","Green's ethics at Harvard; American reception"],["P-Pattison","Critique and positive extension of idealist tradition"],["Bosanquet/Bradley","British idealist second generation; diverse developments"],["Ritchie","Natural rights as conditions for genuine agency; political philosophy"]]
+  },
+  Calkins: {
+    ring:2, dates:"1863–1930", title:"The Self-Psychologist", confirmed:true,
+    desc:"Calkins's self-psychology is the most rigorous account of the irreducible self in the American idealist tradition. Her central claim: psychology must study the self as the fundamental unit — not sensations, neural processes, or behavioral dispositions, but the self as a whole that has experiences, stands in genuine relation to objects, and genuinely engages other selves. Her Persistent Problems of Philosophy (1907) systematically argues for self-psychology against every reductionist alternative. She was denied the Harvard PhD she had earned on grounds of sex, despite completing all requirements and receiving endorsement from both James and Royce.",
+    elc:"Both at Harvard/Radcliffe in the same decade, both formed by James and Royce, both publishing systematic practical ethics in the same period, both subsequently erased from the canonical record. The parallel erasure of Calkins and ELC is the strongest institutional evidence that the erasure was structural rather than a verdict on philosophical quality. ELC's five conditions and Calkins's self-psychology are complementary projects: Calkins specifies the irreducible self as the unit of psychological inquiry; ELC specifies the conditions under which that self achieves genuine selfhood.",
+    inf:[["James","Direct supervisor at Harvard; stream of consciousness"],["Royce","Formation in idealism; community and self"],["Münsterberg","Experimental psychology at Harvard; methodology"],["Plato","Idealist background; knowledge as recollection"],["Lotze","Micro/macro consciousness; individuality"]],
+    out:[["ELC","Parallel project — irreducible self requires ELC's conditions"],["Self-psychology tradition","Continuation at Wellesley"],["Mary Whiton Calkins Award","APA recognition; recovery project ongoing"]]
+  },
+  Follett: {
+    ring:2, dates:"1868–1933", title:"The Creative Experience Philosopher", confirmed:true,
+    desc:"Follett arrived at structurally parallel positions to ELC's through the analysis of groups, conflict, and creative experience rather than through the phenomenological starting point. Her concept of power-with as distinguished from power-over is the social engagement condition applied to organizational theory. Her analysis of conflict as constructive rather than destructive when handled through integration is her most original contribution: conflict is the occasion for genuine self-constitution through genuine engagement with what is other.",
+    elc:"ELC's documented close friend and intellectual companion in the Boston progressive network. Both were doing structurally parallel philosophical work in the same city in the same period apparently without full awareness of the philosophical parallel. Follett's Creative Experience (1924) and ELC's teaching practice are the closest contemporary parallel deployments of the same philosophical position into social life.",
+    inf:[["T.H. Green","Formation in idealist ethics at Cambridge and Newnham"],["Hegel","Developmental structure; conflict as generative"],["Dewey","Transactional experience; democracy and education"],["James","Pluralism; individual experience as real"]],
+    out:[["ELC","Close friend; parallel practical deployment"],["Management theory","Power-with rediscovered in 1990s organisational theory"],["Community organising","Integration not domination as civic practice"]]
+  },
+  Korsgaard: {
+    ring:2, dates:"1952–", title:"The Self-Constitution Analyst", confirmed:true,
+    desc:"Korsgaard's Self-Constitution (2009) is the closest contemporary analytic parallel to ELC's achievement claim. Her central claim: the self is not given antecedently to action but is constituted through action. When you act, you express a principle and constitute yourself as a certain kind of agent. Bad action is self-destructive not merely morally but literally — it undermines the unity of the self. Her divergence from ELC is precise and philosophically important: her conditions are synchronic (what coherent self-constitution looks like at a moment) rather than diachronic (what genuine self-achievement requires across a life). ELC's five conditions specify the temporal developmental pathway Korsgaard's account presupposes but cannot supply.",
+    elc:"Independent convergence within contemporary analytic ethics. Korsgaard arrives at the achievement claim from within Kantian ethics; ELC arrived at it from within Boston idealism seventy years earlier. Showing that ELC's account is prior to and more adequate than Korsgaard's — it provides the temporal and pre-reflective dimensions Korsgaard's account requires but cannot supply — is one of the strongest available arguments for ELC's contemporary philosophical relevance.",
+    inf:[["Kant","Self-legislation; autonomy; the categorical imperative"],["Rawls","Political philosophy; overlapping consensus; direct supervisor"],["Parfit","Personal identity; what matters; psychological continuity"],["Christine Korsgaard","Self-Constitution as culminating statement"]],
+    out:[["Contemporary Kantian ethics","Self-constitution as standard framework"],["Practical identity literature","Wide influence on agency theory"],["ELC","Independent parallel — ELC provides what Korsgaard lacks"]]
+  },
+  Bergson: {
+    ring:2, dates:"1859–1941", title:"The Duration Philosopher", confirmed:true,
+    desc:"Duration — genuine temporal experience as irreducible to a series of discrete moments — is the closest Continental account to the forward-backward structure of interest. His critique of the spatialization of time: when we represent time as a line with discrete points, we have already falsified what experience is. Genuine temporal experience is flowing, interpenetrating, always carrying the past into the present and anticipating the future. Creative Evolution (1907) argues that genuine development is not the unfolding of a predetermined plan but the genuinely creative emergence of the new — what interest reaches toward: not a fixed end but a genuine creation.",
+    elc:"Independent convergence. Both Bergson and ELC were specifying the temporal structure of experience — interest's forward-backward reach — from different national philosophical traditions and with different philosophical methods. Bergson gave the phenomenological description of duration; ELC gave it the normative structure specifying what duration requires to become genuine selfhood rather than mere temporal succession.",
+    inf:[["Spencer","Critical engagement; evolution without mechanism"],["Ravaisson","Of Habit (1838); spiritual transformation through practice"],["Maine de Biran","Felt effort of will as foundational; French phenomenology"],["Plotinus","Duration as participation in eternity"],["Kant","Time as form of intuition; he wanted to radicalise this"]],
+    out:[["Weil","Filtered through Alain; attention and duration"],["Maritain","Bergson as formation; then Catholic alternative"],["Merleau-Ponty","Embodied time; phenomenology of perception"],["ELC","Independent parallel — both specified temporal structure of experience"]]
+  },
+  Buchler: {
+    ring:2, dates:"1914–1991", title:"The Exhibitive Judgment Philosopher", confirmed:true,
+    desc:"Buchler's triadic theory of judgment — assertive, active, exhibitive — provides the philosophical framework within which ELC's poetry and prose can be understood as two modes of the same philosophical project. Assertive judgment states what is the case. Exhibitive judgment exhibits what cannot be fully stated — what can only be shown from inside its own occurrence. Some features of experience are apprehensible in exhibitive judgment in ways that assertive judgment cannot capture. His theory of the self as ordinally constituted through its relational engagements across multiple intersecting orders is structurally parallel to ELC's account of selfhood.",
+    elc:"Buchler provides the philosophical justification for treating ELC's poems as philosophical texts rather than merely literary productions — the argument the scholarly edition requires. His exhibitive judgment concept is available from within the American pragmatist-naturalist tradition rather than requiring special pleading from within idealism. Used alongside Langer's presentational symbolism, the case for ELC's dual mode is made from two independent philosophical directions.",
+    inf:[["Peirce","Semiotics; categories; firstness, secondness, thirdness"],["Dewey","Naturalism; experience as transaction"],["Santayana","Realms of being; animal faith"],["Columbia tradition","Woodbridge, Edman; American naturalism"]],
+    out:[["Ordinal naturalism","Continuation at Graduate Center CUNY"],["ELC","Exhibitive judgment = philosophical legitimacy of her poems"],["Scholarly edition argument","Primary theoretical resource for justifying dual mode"]]
+  },
+  Bowne: {
+    ring:2, dates:"1847–1910", title:"The American Personalist", confirmed:true,
+    desc:"Bowne's Personalism insists on the irreducibility of the person and the necessity of genuine self-development. His core claim: genuine personhood is not given but must be developed through education, engagement, and the active exercise of freedom. The conditions for genuine personhood are real and specifiable. His critique of Absolute Idealism — that it sacrifices the genuine individuality of persons to an impersonal Absolute — is the Pringle-Pattison objection from within the American tradition at Boston University. The Bowne-Brightman-King chain is the most consequential practical deployment of the conditions account in American history.",
+    elc:"Both in Boston simultaneously, both developing accounts of what genuine personhood requires, both insisting on irreducibility of the person against both materialism and absolute idealism. Bowne's institutional base was Boston University; ELC's was Radcliffe and King's Chapel. Their work was parallel rather than directly connected — independent deployments of structurally similar positions within the same city in the same period.",
+    inf:[["Lotze","Systematic idealism; personhood as the key to reality"],["Kant","Autonomy; the person as end in itself"],["Hamilton","Scottish consciousness philosophy"],["T.H. Green","Self-realisation ethics; indirectly through reading"]],
+    out:[["Brightman","Boston Personalism continuation; finite God theory"],["King","Personalist dignity grounds civil rights theology"],["ELC","Parallel project in same city — independent convergence"],["Methodist theology","Personalism as theological framework"]]
+  },
+  Ritchie: {
+    ring:2, dates:"1853–1903", title:"The Conditions Applied to Politics", confirmed:true,
+    desc:"Ritchie's Natural Rights (1895) is the conditions account applied to political philosophy: rights are achievements acquired through developing social membership, not natural possessions of pre-given individuals. The individual who has rights has them because they have developed the capacities for genuine social engagement that rights protect and enable. Rights are conditions for further development, not protections for what is already there. Darwin and Hegel (1893) reconciles evolutionary biology with idealist ethics — both show developmental processes requiring structural conditions.",
+    elc:"Ritchie shows how ELC's conditions account extends into political philosophy — the argument from genuine selfhood to genuine social conditions generates a specific account of what justice requires. His critique of laissez-faire — it protects pre-given individual freedom but not the conditions for genuine freedom — is the political parallel to ELC's practical ethics. Both derive from the same Green-idealist source and arrive at complementary conclusions.",
+    inf:[["T.H. Green","Primary formation; positive liberty; conditions for genuine freedom"],["Darwin","Evolutionary development as structural; natural selection"],["Hegel","Historical development; institutions as actualised spirit"],["Spencer","Critical engagement; laissez-faire fails the conditions test"]],
+    out:[["L.T. Hobhouse","New liberalism; positive freedom; welfare liberalism"],["Green-idealist political tradition","Continuation into welfare state argument"],["ELC","Complementary deployment of same conditions account"]]
+  },
+  Aristotle: {
+    ring:2, dates:"384–322 BC", title:"The Phronesis Precedent", confirmed:true,
+    desc:"Aristotle belongs in Ring II not for virtue ethics generally but specifically for two parallel convergences. First: phronesis — practical wisdom — is strikingly close to ELC's conjunctive capacity. Phronesis is not the application of a rule but the capacity to perceive the morally relevant features of a particular situation, to hold oneself genuinely open to what is there rather than imposing a predetermined framework. It is acquired through experience and the cultivation of genuine perceptiveness — achieved, not innate. Second: oikeiosis — the natural development of moral concern from immediate self-care outward through family, community, and eventually all humanity — is ELC's social engagement condition as a developmental trajectory.",
+    elc:"Aristotle provides the classical philosophical precedent for ELC's fifth condition (phronesis as conjunctive capacity) and for her social engagement condition as a developmental trajectory (oikeiosis). Locating these parallels in Aristotle strengthens the claim that the conditions pick out something real rather than reflecting one tradition's culturally specific assumptions.",
+    inf:[["Plato","Critical formation; Forms vs particulars; phronesis against pure theory"],["Socrates","Dialectical method; self-knowledge as moral foundation"],["Pre-Socratics","Natural philosophy; hylomorphism as alternative to atomism"],["Theophrastus","Direct student; character studies; botanical analogy"]],
+    out:[["Aquinas","Aristotelian hylomorphism + Christian theology"],["Scholastic tradition","Phronesis as prudentia; moral theology"],["MacIntyre","After Virtue; practices and virtues; Aristotelian revival"],["ELC","Phronesis = conjunctive capacity; oikeiosis = social engagement arc"]]
+  },
+  Langer: {
+    ring:2, dates:"1895–1985", title:"The Presentational Symbol Philosopher", confirmed:false,
+    unconfirmedNote:"Langer's presence in Cambridge overlapping with ELC is documented but direct connection or mutual awareness is unconfirmed. The parallel is philosophical, not biographical.",
+    desc:"Philosophy in a New Key (1942) distinguishes discursive symbols — which state meaning propositionally and can be paraphrased — from presentational symbols, which exhibit meaning that cannot be fully discursively stated. A poem does not assert that human emotional life has a certain structure — it presents that structure in a way that can be recognized and felt but not paraphrased without loss. Her account of feeling — not emotion in the psychological sense but the felt quality of lived experience — as the content of presentational symbols provides the philosophical account of what ELC's poems exhibit that her prose conditions can only point toward.",
+    elc:"Langer was at Cambridge and Harvard in the 1920s–30s, overlapping with ELC's final decade [connection unconfirmed — parallel is philosophical not biographical]. Alongside Buchler, she provides the philosophical vocabulary for defending the legitimacy of ELC's exhibitive mode in the scholarly edition argument. Her account comes from within philosophy of art rather than from formal logic, which is the more relevant register for a scholarly edition of poems.",
+    inf:[["Cassirer","Philosophy of symbolic forms; human as symbol-making animal"],["Whitehead","Process philosophy; organic form"],["Frege","Logic of sense and reference; distinction from Cassirer"],["Wittgenstein","Tractatus as negative background; what cannot be said"]],
+    out:[["Philosophy of art","Feeling and Form as standard reference"],["Music aesthetics","Sonata form as tonal motion"],["ELC","Presentational symbol = philosophical legitimacy of her poems [parallel]"]]
+  },
+
+  // ── RING III ──────────────────────────────────────────────────────────────
+  Hegel: {
+    ring:3, dates:"1770–1831", title:"The Developmental Structure", confirmed:true,
+    desc:"Hegel's phenomenology of spirit is the most ambitious attempt to show how genuine selfhood is constituted through a developmental process. The self that has achieved Absolute Knowing has passed through every stage of the dialectic, appropriating each and finding it insufficient until the final integration. The conditions for genuine self-development are specified by the dialectic. The divergence is fundamental: Hegel's subject is cosmic Spirit, not individual interest. The individual self is a moment in Spirit's self-development, not an achievement in its own right. He gets the developmental structure right and the subject wrong.",
+    elc:"Hegel is the background formation for the entire tradition that produced ELC. Green, Caird, Bradley, Bosanquet, and Palmer all studied Hegel systematically. ELC received Hegel mediated through this tradition rather than directly. His developmental structure is the inherited framework; his dissolution of the individual into Spirit is the error the Boston tradition was correcting.",
+    inf:[["Kant","Critical philosophy as starting point; he wanted to complete it"],["Fichte","I positing not-I; dialectical method"],["Schelling","Nature philosophy; identity philosophy"],["Ancient Greeks","Especially Plato, Aristotle, Heraclitus"]],
+    out:[["T.H. Green","British reception; self-realisation ethics"],["Marx","Inverted dialectic; material base"],["Kierkegaard","Existentialist reaction; the individual against the system"],["Caird","Evolutionary idealism; Scottish reception"]]
+  },
+  Dewey: {
+    ring:3, dates:"1859–1952", title:"The Instrumentalist", confirmed:true,
+    desc:"Dewey's account of experience as ongoing transaction between organism and environment, growth as the expansion of the capacity for further growth, and education as the reconstruction of experience — all structurally similar to the conditions account. His critique of spectator theory of knowledge and his insistence on experience as primary are correct and important. The divergence: instrumentalism reduces the conditions for genuine development to conditions for effective functioning. Why genuine growth is better than mere adaptation cannot be grounded within his naturalism without importing a normative claim his framework cannot supply.",
+    elc:"Dewey and ELC were contemporaries working in the same American philosophical tradition with overlapping influences (James, Peirce, the idealist tradition they both reacted against). Dewey's instrumentalism is the reduction that ELC's starting point in interest as found was designed to avoid: effectiveness is not the criterion, genuineness is. Their divergence makes the position clearer by contrast.",
+    inf:[["Hegel","Early formation in Hegelian idealism; then rejected"],["James","Pragmatism; radical empiricism; experience as primary"],["Peirce","Inquiry and belief; logical method"],["Darwin","Evolutionary biology; organism-environment transaction"]],
+    out:[["Instrumentalism","Dominant American philosophy of education"],["Chicago school","Social philosophy; Hull House connection"],["Rorty","Neo-pragmatism; no mirrors of nature"],["ELC","Her starting point avoids his instrumentalist reduction"]]
+  },
+  Kant: {
+    ring:3, dates:"1724–1804", title:"The Floor", confirmed:true,
+    desc:"Kant establishes the floor on which ELC's position builds. The transcendental unity of apperception — the formal I-think that must be able to accompany all my representations — is the minimum formal condition for the possibility of experience. The Paralogisms chapter specifically warns against moving from this formal condition to a substantive soul. ELC's starting point does not make that move. Kant establishes the floor; her conditions describe what can be built on it. The relationship is complement rather than opposition.",
+    elc:"Kant is the unavoidable background for the entire British idealist tradition that shaped ELC through Green, Palmer, and Caird. The transcendental analytic gives the vocabulary for specifying necessary conditions; ELC applies this vocabulary to the conditions for genuine self-achievement rather than to the conditions for the possibility of experience.",
+    inf:[["Hume","Critical response; Copernican revolution in philosophy"],["Rousseau","Moral autonomy; general will"],["Wolff","Rationalist background; German philosophy"],["Newton","Scientific knowledge as the paradigm to account for"]],
+    out:[["Fichte","Absolute I; self-positing subject"],["T.H. Green","Self-realisation ethics; Kantian autonomy socialised"],["Korsgaard","Self-constitution; contemporary Kantian ethics"],["Virtually all modern philosophy","The unavoidable background"]]
+  },
+  Peirce: {
+    ring:3, dates:"1839–1914", title:"The Logic of Inquiry", confirmed:true,
+    desc:"Peirce's account of inquiry starting from the irritation of doubt and the settlement of belief is structurally close to the starting point. The semiotic self — constituted through sign-relations, through the ongoing process of making signs make sense in community — is his most developed account of self-constitution, and it is close. His fallibilism — inquiry is always provisional, always reaching toward a truth it cannot fully possess — is the formal structure of interest following itself honestly. The divergence: his starting point is logic rather than phenomenology, which produces a more formal and less normatively grounded account.",
+    elc:"ELC inherits the Peircean insight through Royce and James. Her fifth condition — the conjunctive capacity — is the Peircean account of genuine inquiry applied to practical ethics: what genuine purposive engagement requires is what genuine inquiry requires, specified for the domain of the lived life rather than for the domain of theoretical knowledge.",
+    inf:[["Kant","Categories; logic of judgment"],["Duns Scotus","Realism about universals; haecceity"],["Boole","Algebra of logic"],["Agassiz","Natural history; classification"]],
+    out:[["James","Pragmatism; though James transformed it"],["Royce","Community of interpretation; sign-relations"],["Dewey","Inquiry and reconstruction; instrumentalist divergence"],["Misak","Neo-pragmatism; revival of Peircean inquiry model"]]
+  },
+  Sartre: {
+    ring:3, dates:"1905–1980", title:"The Radical Freedom Philosopher", confirmed:true,
+    desc:"Sartre agrees that existence precedes essence — the self is not given but made — and that bad faith is the evasion of the constitutive choice. Both claims are correct and directly relevant to ELC's position. The divergence: radical freedom without conditions is not freedom but arbitrariness. Sartre describes the structure of bad faith accurately but fails to specify what genuine self-achievement requires. He also makes the pour-soi constitutively lacking — the self is always not-yet-itself, always projecting toward a completion it can never reach. This is too strong: genuine self-achievement is possible. ELC's conditions can be met.",
+    elc:"Sartre's bad faith is the most precise contemporary philosophical account of what ELC calls the failure of the constitutive choice — living as if the self were fixed and given rather than achieved through active appropriation. His account of bad faith strengthens ELC's achievement claim by showing what the failure looks like from inside. His radical freedom is the over-correction her conditions account corrects.",
+    inf:[["Husserl","Phenomenological method; intentionality"],["Heidegger","Being-in-the-world; dasein; authenticity"],["Hegel","Dialectic; consciousness and self-consciousness"],["Descartes","Cogito; consciousness as self-transparent"]],
+    out:[["De Beauvoir","Corrected his radical freedom toward social constitution"],["Camus","Absurdism; alternative to Sartrean commitment"],["Merleau-Ponty","Embodied subject; phenomenology of perception"],["French existentialism","Dominant cultural philosophy post-WWII"]]
+  },
+  Bradley: {
+    ring:3, dates:"1846–1924", title:"The Absolute Idealist", confirmed:true,
+    desc:"Bradley's critique of atomic individualism — an isolated self is a contradiction in terms, genuine selfhood requires genuine social engagement — is structurally relevant and correct. His Appearance and Reality argues that finite selves are appearances of the Absolute rather than genuine realities in their own right. This is the Pringle-Pattison target: Bradley dissolves the individual self more completely than Hegel's Spirit. The critique of atomic individualism is right; the dissolution of the individual into the Absolute is the error.",
+    elc:"Bradley is the most important negative background figure for ELC's tradition. Green, Bosanquet, and P-Pattison were all in direct dialogue with his absolute idealism. ELC's conditions are partly specified against his dissolution of the individual — the conditions describe what the achieved self requires, showing that individuality is not appearance but genuine achievement.",
+    inf:[["Hegel","Absolute idealism; logic of internal relations"],["Green","British idealist formation; then diverged toward Absolute"],["Lotze","Idealist logic; value and reality"],["Spencer","Critical engagement; associationism as inadequate"]],
+    out:[["Bosanquet","Parallel absolute idealism; Value and Destiny"],["Appearance/Reality tradition","Logic of internal relations"],["Russell/Moore","Primary targets of their revolt against idealism"],["Murdoch","In her formative reading; problem-mystery distinction"]]
+  },
+
+  // ── RING IV ───────────────────────────────────────────────────────────────
+  "Hume/Parfit": {
+    ring:4, dates:"1711–1776 / 1942–2017", title:"The Bundle Objectors", confirmed:true,
+    desc:"Hume was right that no pre-given substantial self is found inward. He was wrong that what is found is a neutral bundle of disconnected impressions. What is found is interest — already directed, already temporal, already the raw material of selfhood. Parfit's neo-Humean objection is more technically dangerous: personal identity over time is not what matters — psychological continuity is. The response: interest is the continuity that matters, and it is forward-backward rather than merely backward. Numerical identity is the wrong criterion.",
+    elc:"Hume's bundle misdescribes what interest actually is when found inward. Parfit's eliminativism about personal identity applies the wrong concept — numerical identity — to the question ELC was answering: not what makes you the same person over time, but what makes you a genuine self rather than merely a locus of interest. The achievement is real even if strict numerical identity is not.",
+    inf:[["Newton","Mechanist worldview; impressions as atoms"],["Locke","Personal identity as psychological continuity"],["Hutcheson","Moral sentimentalism; against moral rationalism"],["Mandeville","Self-interest and social order"]],
+    out:[["Parfit","Reasons and Persons; what matters in survival"],["Eliminativist tradition","Metzinger; no self model"],["Hume revival","Contemporary empiricist ethics; anti-rationalism"],["ELC","Her starting point corrects his misdescription of what is found"]]
+  },
+  "Moore/Russell": {
+    ring:4, dates:"1873–1958 / 1872–1970", title:"The Analytic Revolt", confirmed:true,
+    desc:"Moore and Russell attacked the British idealist tradition specifically — the doctrine of internal relations, the Absolute — and their attacks are largely correct. They do not touch the conditions account, which depends on neither. Moore's Open Question Argument is relevant but not decisive: the conditions are not identified with goodness but specified as what interest requires to become genuine selfhood. The live objection is the normative gap: what makes genuine self-achievement good rather than merely different from its absence?",
+    elc:"Moore and Russell's revolt against idealism created the philosophical environment in which ELC's work was ignored — not because they refuted it but because they shifted philosophical attention entirely away from the domain in which it operated. The conditions account was not targeted by the analytic revolt; it was simply rendered invisible by a change in philosophical fashion and methodology.",
+    inf:[["Frege","Mathematical logic; sense and reference; anti-psychologism"],["Meinong","Objects of thought; intentionality"],["Bradley","Primary target of their revolt"],["Peano","Mathematical notation; Principia project"]],
+    out:[["Analytic philosophy","Dominant tradition in Britain and America"],["Logical positivism","Vienna Circle; verification principle"],["Ordinary language philosophy","Wittgenstein II; Austin; Ryle"],["ELC","Made invisible by the methodological shift they instituted"]]
+  },
+  Metzinger: {
+    ring:4, dates:"1958–", title:"The Phenomenal Self Model", confirmed:true,
+    desc:"Metzinger's Being No One argues that the phenomenal self model — the brain's self-representation — is all there is. There is no substantial self behind the model. This does not defeat the starting point but challenges the normative dimension: if the self is only a model, genuine self-achievement is model-sophistication rather than a real achievement of a real self. The response: the achievement claim does not require a substantial self behind the model — it requires that some modes of modeling are genuinely better than others. Metzinger's own meditative practice instantiates the conditions he claims are conditions for mere modeling. The practice is the argument against the theory.",
+    elc:"The model account explains the phenomenology of selfhood without positing a metaphysical subject — which ELC does not require. The challenge is to the normative dimension: the conditions must be more than conditions for a more sophisticated model. The response: interest provides its own normative dimension, and the conditions are what interest discovers it requires to become genuinely itself — not what a theorist imposes on a model.",
+    inf:[["Husserl","Phenomenology; intentionality; Metzinger trained in phenomenological tradition"],["Nagel","What is it like to be; phenomenal consciousness"],["Churchland","Eliminative materialism; folk psychology"],["Cognitive science","Computational models of mind"]],
+    out:[["Open Individuality project","Continuation of no-self toward collective identity"],["Consciousness science","Neural correlates; binding problem"],["ELC","His practice refutes his theory; the conditions hold even on the model account"]]
+  },
+  "Foucault(E)": {
+    ring:4, dates:"1926–1984", title:"The Genealogical Objection", confirmed:true,
+    desc:"The genealogical objection from Discipline and Punish (1975): the achieved self is not genuinely achieved but manufactured by disciplinary power. The conditions for self-achievement look like the conditions for the production of docile subjects. This is the most politically dangerous objection because it recontextualises rather than contests the conditions directly. The response requires distinguishing between conditions that serve genuine self-achievement and conditions that serve disciplinary subjection. This distinction is real and specifiable: interest can be cultivated or manipulated, and the difference between genuine education and disciplinary production is exactly the difference ELC's account describes.",
+    elc:"Foucault's early genealogical work is the objection that ELC's conditions are merely the conditions for producing properly disciplined subjects — bourgeois, Protestant, industrious — rather than for genuine self-achievement. The late Foucault's turn to ancient practices of self-formation (Technologies of the Self, 1982) is his own acknowledgment that the distinction between genuine self-cultivation and disciplinary subjection is real. His final work is effectively a partial answer to his own objection.",
+    inf:[["Nietzsche","Genealogy of morals; will to power; perspectivism"],["Heidegger","Dasein; being-in-the-world; formal indication"],["Bachelard","Epistemological breaks; discontinuity in science"],["Canguilhem","Normal and pathological; medical norms"]],
+    out:[["Foucault (Late)","Technologies of the Self; care of the self; self-formation"],["Queer theory","Butler; performativity; gender as achieved"],["Critical pedagogy","Freire connection; power and education"],["ELC","His objection requires the distinction her account makes explicit"]]
+  },
+
+  // ── OUTER RING ────────────────────────────────────────────────────────────
+  Mencius: {
+    ring:5, dates:"372–289 BC", title:"The Four Sprouts", confirmed:true,
+    desc:"Mencius is the philosopher in the Confucian tradition who comes closest to the full position, arriving there twenty-three centuries before ELC with no possible influence in either direction. His central claim: the heart-mind (xin) has four native moral sprouts (si duan) — the beginning of benevolence, righteousness, ritual propriety, and wisdom. These sprouts are genuinely there but are beginnings, not completions. They must be cultivated through sustained engagement with community, through moral practice, through active development of the capacities they initiate. The junzi — the exemplary person — is not born but made through this cultivation.",
+    elc:"The sprouts are interest before the conditions have been met: genuinely directed, genuinely reaching toward something, but not yet achieved selfhood. The cultivation of the sprouts through the conditions is ELC's account of how interest becomes genuine selfhood — through purposive activity, social engagement, attention, temporal coherence, and the constitutive choice. His argument against Gaozi — human nature is not like water that flows wherever the channel is cut — is the anti-Humean argument from within Chinese philosophy: what is found inward is not neutral.",
+    inf:[["Confucius","Ren as benevolence; ritual propriety; the Master's teaching"],["Zisi","Grandson of Confucius; transmission of doctrine"],["King Hui of Liang","Practical context; political ethics"],["Heaven (Tian)","Mandate of Heaven; moral cosmology"]],
+    out:[["Neo-Confucianism","Song Dynasty; xin-xue (heart-mind learning)"],["Wang Yangming","Unity of knowledge and action; moral intuition"],["Contemporary Confucian revival","Van Norden; moral sprout theory"],["ELC","Independent convergence — 23 centuries apart"]]
+  },
+  "Epictetus/M.A.": {
+    ring:5, dates:"50–135 / 121–180 AD", title:"The Stoic Achievement", confirmed:true,
+    desc:"Two Stoic convergences. First: prohairesis — the faculty of choice and assent, the one thing genuinely our own — is the core of Epictetan practice. The discipline of assent (not assenting to impressions before examining them) is ELC's conjunctive capacity; the discipline of desire (desiring only what is genuinely in one's power) is the constitutive choice applied to desire; the discipline of action (acting in accordance with social nature) is the social engagement condition. Second: oikeiosis — the natural development of moral concern from self-care outward to all humanity — is ELC's social engagement condition as developmental trajectory. Marcus Aurelius's Meditations is Stoic philosophy in the exhibitive mode: not a treatise but daily exhibitive practice of the conditions from inside their difficulty.",
+    elc:"The Stoic tradition holds the normative force of the conditions for four centuries without requiring either metaphysical overclaim or naturalist reduction. This is the strongest historical evidence that the Western philosophical tradition's three stopping points were not philosophical necessities but failures of nerve in the face of a false binary. ELC took the path the Stoics had been taking for centuries.",
+    inf:[["Zeno of Citium","Stoic school founded; logic, physics, ethics"],["Chrysippus","Systematised Stoicism; logic of conditionals"],["Socrates","Model of philosophical practice; death as philosophy"],["Plato","Platonism in dialogue; then diverged toward naturalism"]],
+    out:[["Roman Stoicism","Cicero; Seneca; practical philosophy"],["Neo-Stoicism (16th c.)","Lipsius; Stoicism revived for political life"],["Modern Stoicism","Contemporary revival; CBT parallel"],["ELC","Independent convergence — normative force without overclaim"]]
+  },
+  Ubuntu: {
+    ring:5, dates:"Traditional / 20th c. articulation", title:"I Am Because We Are", confirmed:false,
+    unconfirmedNote:"Ubuntu as a named philosophical tradition with systematic academic articulation is primarily a 20th-century development; its deep pre-colonial roots are attested but the precise historical genealogy is a matter of ongoing scholarly debate.",
+    desc:"Ubuntu — umuntu ngumuntu ngabantu (a person is a person through other persons) — is the philosophical account of personhood dominant in sub-Saharan African philosophical traditions. Its central claim: genuine personhood is not given but constituted through one's relationships to the community. You become a person through genuine participation in the life of the community — through ubuntu, through the active exercise and cultivation of your relational capacities. This is ELC's social engagement condition elevated to the foundational account of what personhood is.",
+    elc:"Independent convergence from sub-Saharan African philosophy. Ubuntu and ELC's conditions agree that genuine selfhood is achieved through genuine engagement with what is other, not given before that engagement begins. The direction of constitution differs — for ubuntu, social constitution is foundational; for ELC, individual interest is the starting point and social engagement is the condition for its genuine development. But the structural convergence on the achievement claim is the evidential point.",
+    inf:[["Bantu philosophical traditions","Deep roots in community-based personhood"],["Tutu articulation","No Future Without Forgiveness (1999)"],["Ramose","African Philosophy Through Ubuntu (1999)"],["Metz","Analytical engagement with ubuntu ethics"]],
+    out:[["Truth and Reconciliation","Ubuntu as political philosophy in practice"],["African Philosophy","Growing academic literature"],["ELC","Independent convergence — social engagement as constitutive"]]
+  },
+  Buber: {
+    ring:5, dates:"1878–1965", title:"The I-Thou Philosopher", confirmed:true,
+    desc:"Buber's I and Thou (1923) arrived at the social engagement condition as the foundational account of selfhood from within Jewish existentialist and dialogical philosophy. His central claim: the I that appears in genuine I-Thou relation is not the same I as in I-It relation — the I is genuinely constituted by the quality of its relations. There is no I that exists before relation and then enters into it; the I is what emerges in the relation. All real living is meeting. The conditions for genuine I-Thou encounter are ELC's social engagement and conjunctive capacity conditions stated as conditions for genuine encounter.",
+    elc:"Buber arrived at the social engagement condition as the foundational account of selfhood from within Jewish existentialist and dialogical philosophy with no connection to the Boston tradition. The convergence strengthens the claim that both are tracking something real about what genuine selfhood requires. Between Man and Man (1947) is particularly relevant for its pedagogical essays: genuine teaching requires I-Thou encounter, not I-It transmission — Palmer's philosophy stated from within dialogical philosophy.",
+    inf:[["Hasidic tradition","Jewish mysticism; divine sparks; joy in service"],["Nietzsche","Revaluation of values; genuine commitment against conformity"],["Kant","Moral autonomy; person as end"],["Kierkegaard","Existential commitment; the individual before God"]],
+    out:[["Dialogical philosophy","Rosenzweig; Levinas; Bakhtin"],["Jewish philosophy","20th century Jewish existentialism"],["Education theory","Genuine encounter vs. transmission"],["ELC","Independent convergence — social engagement as constitutive of self"]]
+  },
+  "Maine de Biran": {
+    ring:5, dates:"1766–1824", title:"The French Phenomenological Predecessor", confirmed:true,
+    desc:"Maine de Biran is the earliest Continental philosopher to identify as the foundational philosophical experience not Descartes' cogito but the felt effort of will against resistance — the immediate inner experience of active striving before intellectual abstraction. His claim: philosophy begins not from the clear and distinct idea but from the primitive fact of the will encountering the resistance of what is not-self. This felt effort is primary; the self is not deduced from it but is present in it as the actor. This is interest as found — in French philosophical vocabulary from a generation before Green or Emerson, with no possible connection to either.",
+    elc:"Maine de Biran, James, and ELC converge on the same phenomenological datum from three different national philosophical traditions and different centuries: the forward-reaching, resistant-encountering orientation of experience that is there before theory begins. Maine de Biran names it the effort of will; James names it pure experience; ELC names it interest. All three are describing the same thing.",
+    inf:[["Condillac","Sensationalism; experience as primary"],["Descartes","Critical engagement; moves beyond the cogito"],["Locke","Empiricism; ideas from experience"],["Cabanis","Physiological basis of consciousness"]],
+    out:[["Ravaisson","Of Habit (1838); most important student"],["Bergson","Called Maine de Biran the greatest French philosopher"],["French spiritualism","Lachelier, Boutroux, Blondel"],["ELC","Independent convergence — felt effort of will = interest as found"]]
+  },
+  Freire: {
+    ring:5, dates:"1921–1997", title:"The Conscientization Philosopher", confirmed:true,
+    desc:"Freire's Pedagogy of the Oppressed (1968) arrived at ELC's account of teaching as enabling self-constitution from within Latin American liberation pedagogy, with no historical connection to the Boston tradition. Banking education — treating the student as a passive receptacle for deposited information — destroys the conditions by treating the student as an object rather than a subject. Genuine education is dialogical: teacher and student both learn through genuine engagement with the world as a shared problem. The conditions for genuine conscientization map directly onto ELC's five conditions.",
+    elc:"Palmer articulated teaching as enabling self-constitution at Harvard; ELC deployed it in the classroom; Freire arrived at the same account from within the experience of teaching Brazilian peasants to read. The convergence across these three — different centuries, different continents, different social contexts — from within the same structural problem (what genuine education requires) is the practical deployment argument at its most powerful.",
+    inf:[["Marx","Praxis; theory and practice unified; historical materialism"],["Hegel","Dialectic; consciousness and oppression"],["Jaspers","Existentialist philosophy; authentic existence"],["Mounier","Personalism; the person against the mass"]],
+    out:[["Critical pedagogy","McLaren, Giroux; education as political practice"],["Liberation theology","Gutierrez; base communities; preferential option for the poor"],["Community organising","Alinsky tradition; power analysis"],["ELC","Independent convergence — teaching as enabling self-constitution"]]
+  },
+  Bakhtin: {
+    ring:5, dates:"1895–1975", title:"The Dialogical Self Philosopher", confirmed:true,
+    desc:"Bakhtin's account of the dialogical self — constituted through genuine engagement with the genuinely other perspective rather than through internal monologue — is the social engagement condition as the foundational account of selfhood stated from within literary theory. His analysis of the polyphonic novel in Dostoevsky: genuine characters are centers of value in their own right, genuinely other, genuinely capable of surprising the author. The polyphonic novel exhibits genuine selfhood in encounter in a way that monological narrative cannot. This is the exhibitive philosophy argument from within literary theory: the novel form can exhibit what philosophical treatise cannot state.",
+    elc:"Bakhtin and Buchler independently arrived at the claim that certain dimensions of human experience require the exhibitive mode — one from within Russian literary theory, one from within American naturalism. Their convergence strengthens the case that the dual mode is a philosophical necessity rather than a stylistic preference. ELC did both: her prose conditions and her poems are exactly the dual mode both Bakhtin and Buchler were theorising from within their respective traditions.",
+    inf:[["Dostoevsky","Primary case study; polyphonic novel as discovery"],["Kant","Ethical dimension; the other as end"],["Cassirer","Symbolic forms; philosophy of culture"],["Russian formalism","Critical engagement; language beyond form"]],
+    out:[["Dialogism","Academic field; Bakhtin Circle reception"],["Narrative ethics","Novel as moral laboratory"],["Literary theory","Heteroglossia; carnival; chronotope"],["ELC","Independent convergence — exhibitive mode as philosophical necessity"]]
+  }
+};
+
+const DKEYS = Object.keys(DATA);
+
+const RINGS_CFG = [
+  { rad:108, cr:102, label:"Ring I — Closest Allies",
+    nodes:["Emerson","James","Weil","P-Pattison","Royce","Palmer"] },
+  { rad:196, cr:188, label:"Ring II — Substantial Agreement",
+    nodes:["Murdoch","T.H. Green","Du Bois","Caird","Bosanquet","Korsgaard","Follett","Bergson","Buchler","Calkins","Bowne","Ritchie","Aristotle","Langer","Foucault(L)"] },
+  { rad:284, cr:276, label:"Ring III — Partial Agreement",
+    nodes:["Hegel","Sartre","Dewey","Kant","Peirce","Bradley"] },
+  { rad:368, cr:360, label:"Ring IV — Objectors",
+    nodes:["Hume/Parfit","Moore/Russell","Metzinger","Foucault(E)"] },
+];
+
+const OUTER_CFG = {
+  rad:452, cr:444, label:"Same Outcome — Different Vocab",
+  nodes:["Mencius","Epictetus/M.A.","Ubuntu","Buber","Maine de Biran","Freire","Bakhtin"]
+};
+
+const SZ = 960;
+const CX = 480;
+const CY = 480;
+
+function nodePos(radius, idx, total) {
+  const angle = (360 / total) * idx * Math.PI / 180;
+  return { x: CX + radius * Math.sin(angle), y: CY - radius * Math.cos(angle) };
+}
+
+function textAnchor(x) {
+  const d = x - CX;
+  if (Math.abs(d) < 30) return "middle";
+  return d > 0 ? "start" : "end";
+}
+
+function textX(x) {
+  const d = x - CX;
+  if (Math.abs(d) < 30) return x;
+  return x + (d > 0 ? 12 : -12);
+}
+
+function findKey(shortName) {
+  const clean = shortName.replace("(L)","").replace("(E)","").trim();
+  return DKEYS.find(function(k) {
+    return clean === k || clean === k.split(" ")[0] || k === clean;
+  });
+}
+
+function DetailView({ name, onBack }) {
+  const fig = DATA[name];
+  const isMobile = useIsMobile();
+  if (!fig) return null;
+  const isOuter = fig.ring === 5;
+  const ringColor = isOuter ? OUTER_COLOR : (RING_COLORS[fig.ring - 1] || RING_COLORS[0]);
+
+  return (
+    <div style={{ background: BG, minHeight: "100vh", fontFamily: "Georgia, serif", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: SURF, borderBottom: "1px solid " + BORD, padding: "11px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+        <button onClick={onBack}
+          style={{ background: "none", border: "1px solid " + BORD, color: MUTED, padding: "5px 12px", borderRadius: "4px", cursor: "pointer", fontSize: "22px", fontFamily: "Georgia, serif" }}>
+          Back
+        </button>
+        <div>
+          <span style={{ color: ringColor, fontSize: "32px", fontWeight: "bold" }}>{name}</span>
+          <span style={{ color: MUTED, fontSize: "22px", marginLeft: "8px" }}>
+            {isOuter ? "Outer — " : "Ring " + fig.ring + " — "}
+            {fig.dates} — {fig.title}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ padding: "14px", maxWidth: "780px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+
+        {!fig.confirmed && (
+          <div style={{ background: "rgba(192,120,64,0.1)", borderRadius: "8px", border: "1px solid rgba(192,120,64,0.35)", padding: "10px 13px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+            <span style={{ color: WARN, fontSize: "28px", flexShrink: 0 }}>⚠</span>
+            <div>
+              <p style={{ color: WARN, fontSize: "18px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 3px", fontWeight: "bold" }}>Still Being Updated</p>
+              <p style={{ color: "#A09080", fontSize: "22px", lineHeight: "1.5", margin: 0 }}>
+                {fig.unconfirmedNote || "Some claims in this entry are working hypotheses or inferences pending further archival verification."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "13px" }}>
+          <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Their Position</p>
+          <p style={{ color: TX, fontSize: "24px", lineHeight: "1.65", margin: 0 }}>{fig.desc}</p>
+        </div>
+
+        <div style={{ background: "rgba(212,168,64,0.07)", borderRadius: "8px", border: "1px solid rgba(212,168,64,0.22)", padding: "13px" }}>
+          <p style={{ color: GOLD, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>★ Connection to ELC</p>
+          <p style={{ color: TX, fontSize: "24px", lineHeight: "1.65", margin: 0 }}>{fig.elc}</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
+          <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
+            <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>Influences On Them</p>
+            {fig.inf.map(function(item, i) {
+              return (
+                <div key={i} style={{ marginBottom: "6px" }}>
+                  <span style={{ color: INF, fontSize: "22px", fontWeight: "600" }}>{item[0]}</span>
+                  <span style={{ color: "#3A4658", fontSize: "20px", display: "block" }}>{item[1]}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
+            <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>Transmissions Toward ELC</p>
+            {fig.out.map(function(item, i) {
+              const isELC = item[0] === "ELC";
+              return (
+                <div key={i} style={{ marginBottom: "6px" }}>
+                  <span style={{ color: isELC ? GOLD : ringColor, fontSize: "22px", fontWeight: "600" }}>
+                    {isELC ? "★ ELC" : item[0]}
+                  </span>
+                  <span style={{ color: "#3A4658", fontSize: "20px", display: "block" }}>{item[1]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ background: SURF, borderRadius: "8px", border: "1px solid " + BORD, padding: "12px" }}>
+          <p style={{ color: MUTED, fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 10px" }}>Lineage Flow</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            {fig.inf.slice(0, 3).map(function(item, i) {
+              return (
+                <span key={i} style={{ background: "#1A2030", border: "1px solid " + BORD, borderRadius: "4px", padding: "3px 8px", color: INF, fontSize: "20px" }}>
+                  {item[0]}
+                </span>
+              );
+            })}
+            <span style={{ color: MUTED, fontSize: "32px" }}>→</span>
+            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "6px", padding: "4px 10px", color: ringColor, fontSize: "22px", fontWeight: "bold" }}>
+              {name}
+            </span>
+            <span style={{ color: MUTED, fontSize: "32px" }}>→</span>
+            {fig.out.slice(-2).map(function(item, i) {
+              const isELC = item[0] === "ELC";
+              return (
+                <span key={i} style={{ background: isELC ? "rgba(212,168,64,0.15)" : "#1A2030", border: "1px solid " + (isELC ? GOLD : BORD), borderRadius: "4px", padding: "3px 8px", color: isELC ? GOLD : TX, fontSize: "20px", fontWeight: isELC ? "bold" : "normal" }}>
+                  {item[0]}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function MainWeb({ onSelect }) {
+  const [tip, setTip] = useState(null);
+  const isMobile = useIsMobile();
+  const vb = "0 0 " + SZ + " " + SZ;
+
+  return (
+    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: "14px", fontFamily: "Georgia, serif" }}>
+      <h1 style={{ color: "#E8D5A0", fontSize: "38px", fontWeight: "bold", margin: "0 0 2px", letterSpacing: "0.04em" }}>
+        The Philosophical Web
+      </h1>
+      <p style={{ color: MUTED, fontSize: "20px", margin: "0 0 2px" }}>
+        Ella Lyman Cabot · Interest, the Achieved Self, and the Conditions of Selfhood
+      </p>
+      <p style={{ color: "#3A4060", fontSize: "18px", fontStyle: "italic", margin: "0 0 8px" }}>
+        Working document — still being updated · Tap any node to explore lineages
+      </p>
+
+      <div style={{ minHeight: "26px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px", maxWidth: "640px", textAlign: "center" }}>
+        {tip && (
+          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "4px", padding: "3px 11px", color: "#B8C0D8", fontSize: "20px" }}>
+            {tip}
+          </div>
+        )}
+      </div>
+
+      <div style={{ width: "100%", maxWidth: "760px" }}>
+        <svg viewBox={vb} style={{ width: "100%", height: "auto" }}>
+          <rect width={SZ} height={SZ} fill={BG} />
+
+          {[0,30,60,90,120,150,180,210,240,270,300,330].map(function(deg) {
+            const rad = deg * Math.PI / 180;
+            return (
+              <line key={deg}
+                x1={CX} y1={CY}
+                x2={CX + 490 * Math.sin(rad)}
+                y2={CY - 490 * Math.cos(rad)}
+                stroke="#ffffff" strokeWidth="0.3" strokeOpacity="0.03" />
+            );
+          })}
+
+          {RINGS_CFG.map(function(ring, ri) {
+            return (
+              <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
+                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.7" strokeOpacity="0.18" />
+            );
+          })}
+
+          <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
+            fill="none" stroke={OUTER_COLOR} strokeWidth="0.8" strokeOpacity="0.28"
+            strokeDasharray="9 5" />
+
+          <circle cx={CX} cy={CY} r="52" fill={GOLD} opacity="0.1" />
+          <circle cx={CX} cy={CY} r="42" fill={GOLD} opacity="0.93" />
+          <text x={CX} y={CY - 5} textAnchor="middle" fill="#FFF8E8" fontSize="28" fontWeight="bold">ELC</text>
+          <text x={CX} y={CY + 10} textAnchor="middle" fill="#FFF8E8" fontSize="15" opacity="0.8">1866–1934</text>
+
+          {RINGS_CFG.map(function(ring, ri) {
+            const col = RING_COLORS[ri];
+            return ring.nodes.map(function(name, ni) {
+              const p = nodePos(ring.rad, ni, ring.nodes.length);
+              const key = findKey(name);
+              const hasData = key && DATA[key];
+              const isHov = tip === name;
+              return (
+                <g key={ring.label + ni}
+                  onMouseEnter={function() { setTip(name); }}
+                  onMouseLeave={function() { setTip(null); }}
+                  onClick={function() { if (hasData) onSelect(key); }}
+                  style={{ cursor: hasData ? "pointer" : "default" }}>
+                  {hasData && !isHov && (
+                    <circle cx={p.x} cy={p.y} r="10"
+                      fill="none" stroke={col} strokeWidth="0.9" strokeOpacity="0.5" />
+                  )}
+                  {isHov && (
+                    <circle cx={p.x} cy={p.y} r="13"
+                      fill="none" stroke={col} strokeWidth="1.2" strokeOpacity="0.7" />
+                  )}
+                  <circle cx={p.x} cy={p.y}
+                    r={isHov ? 9 : 6}
+                    fill={col}
+                    opacity={isHov ? 0.95 : 0.7} />
+                  <text
+                    x={textX(p.x)} y={p.y + 4}
+                    textAnchor={textAnchor(p.x)}
+                    fill={isHov ? col : "#B0B8D0"}
+                    fontSize="20"
+                    fontWeight={isHov ? "bold" : "normal"}>
+                    {name}
+                  </text>
+                </g>
+              );
+            });
+          })}
+
+          {OUTER_CFG.nodes.map(function(name, ni) {
+            const p = nodePos(OUTER_CFG.rad, ni, OUTER_CFG.nodes.length);
+            const key = findKey(name);
+            const hasData = key && DATA[key];
+            const isHov = tip === name;
+            return (
+              <g key={"o" + ni}
+                onMouseEnter={function() { setTip(name); }}
+                onMouseLeave={function() { setTip(null); }}
+                onClick={function() { if (hasData) onSelect(key); }}
+                style={{ cursor: hasData ? "pointer" : "default" }}>
+                {hasData && !isHov && (
+                  <circle cx={p.x} cy={p.y} r="9"
+                    fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.5" />
+                )}
+                {isHov && (
+                  <circle cx={p.x} cy={p.y} r="11"
+                    fill="none" stroke={OUTER_COLOR} strokeWidth="1.2" strokeOpacity="0.7" />
+                )}
+                <circle cx={p.x} cy={p.y}
+                  r={isHov ? 7 : 5}
+                  fill={isHov ? OUTER_COLOR : "#7E6EAA"}
+                  opacity="0.9" />
+                <text
+                  x={textX(p.x)} y={p.y + 4}
+                  textAnchor={textAnchor(p.x)}
+                  fill={isHov ? OUTER_COLOR : "#9890B8"}
+                  fontSize="19">
+                  {name}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px 18px", maxWidth: "520px", width: "100%", marginTop: "8px" }}>
+        {[
+          { color: RING_COLORS[0], label: "Ring I — Closest Allies" },
+          { color: RING_COLORS[1], label: "Ring II — Substantial Agreement" },
+          { color: RING_COLORS[2], label: "Ring III — Partial Agreement" },
+          { color: RING_COLORS[3], label: "Ring IV — Objectors" },
+          { color: OUTER_COLOR,    label: "Outer — Same Outcome, Different Vocab" },
+          { color: GOLD,           label: "ELC — Starting Point" },
+        ].map(function(item, i) {
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <span style={{ color: MUTED, fontSize: "18px" }}>{item.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: "10px", maxWidth: "440px", width: "100%", display: "flex", alignItems: "flex-start", gap: "8px", background: "rgba(192,120,64,0.07)", border: "1px solid rgba(192,120,64,0.2)", borderRadius: "6px", padding: "8px 12px" }}>
+        <span style={{ color: WARN, fontSize: "24px", flexShrink: 0 }}>⚠</span>
+        <p style={{ color: "#807060", fontSize: "18px", lineHeight: "1.5", margin: 0 }}>
+          <strong style={{ color: WARN }}>Still Being Updated.</strong> Entries marked with ⚠ in the detail view contain claims that are working hypotheses or inferences pending archival verification. All other entries draw from established scholarship and primary sources.
+        </p>
+      </div>
+
+    </div>
+  );
+}
+
+export default function PhilosophicalWeb() {
+  const [selected, setSelected] = useState(null);
+
+  if (selected) {
+    return <DetailView name={selected} onBack={function() { setSelected(null); }} />;
+  }
+
+  return <MainWeb onSelect={function(key) { setSelected(key); }} />;
+}

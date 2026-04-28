@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PhilosophicalWeb from "./PhilosophicalWeb";
 
 // ── RESOURCES DATA -- edit to update ───────────────────────────────
 const PRIMARY = [
@@ -121,6 +122,7 @@ const css = `
 
 /* ── Layout ── */
 .page { max-width: 860px; margin: 0 auto; padding: 3.5rem 1.5rem 5.5rem; background: #f5efe4 !important; }
+.page-fullbleed { max-width: 100%; margin: 0; padding: 0; background: transparent; }
 .sec { animation: enter 0.5s ease both; }
 @keyframes enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -905,10 +907,10 @@ function useScrollTop() {
 }
 
 // ── APP ───────────────────────────────────────────────────────────
-const SECTIONS = ["Home","Research","Publications","Teaching","CV","Resources","Contact"];
+const SECTIONS = ["Home","Research","Publications","Teaching","CV","Resources","Web","Contact"];
 const VIEWS = {
   Home:<Home/>, Research:<Research/>, Publications:<Publications/>,
-  Teaching:<Teaching/>, CV:<CV/>, Resources:<Resources/>, Contact:<Contact/>
+  Teaching:<Teaching/>, CV:<CV/>, Resources:<Resources/>, Web:<PhilosophicalWeb/>, Contact:<Contact/>
 };
 
 export default function App() {
@@ -944,7 +946,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main id="main" className="page" key={active}>
+      <main id="main" className={active === "Web" ? "page-fullbleed" : "page"} key={active}>
         {VIEWS[active]}
       </main>
 
