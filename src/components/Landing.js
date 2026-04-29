@@ -5,6 +5,7 @@ import {
 } from "../theme";
 import { hrefFor } from "../router";
 import ThemeToggle from "./ThemeToggle";
+import Footer from "./Footer";
 
 const sharedStyles = `
   .lp-link {
@@ -13,27 +14,13 @@ const sharedStyles = `
   }
   .lp-link:hover, .lp-link:focus-visible {
     background: var(--accent-faint);
-    border-color: ${ACCENT};
+    border-color: var(--accent);
     outline: none;
   }
   .lp-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
-  .lp-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-  .lp-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: ${ACCENT}; color: ${BG}; border-radius: 4px; font-weight: bold; z-index: 100; }
 `;
 
-function SectionHeading({ children }) {
-  return (
-    <h2 style={{
-      color: ACCENT,
-      fontSize: "13px",
-      letterSpacing: "0.18em",
-      textTransform: "uppercase",
-      margin: "0 0 14px",
-      fontWeight: 600,
-      fontFamily: "'Cormorant Garamond', Georgia, serif"
-    }}>{children}</h2>
-  );
-}
+const COL = "720px";
 
 export default function Landing({ theme, onToggleTheme }) {
   const isMobile = useIsMobile();
@@ -41,10 +28,10 @@ export default function Landing({ theme, onToggleTheme }) {
   return (
     <div style={{ background: BG, minHeight: "100vh", color: TX }}>
       <style>{sharedStyles}</style>
-      <a href="#landing-main" className="lp-skip">Skip to content</a>
+      <a href="#landing-main" className="elc-skip">Skip to content</a>
 
       <div style={{
-        maxWidth: "780px",
+        maxWidth: COL,
         margin: "0 auto",
         padding: isMobile ? "16px 16px 0" : "20px 24px 0",
         display: "flex",
@@ -55,7 +42,7 @@ export default function Landing({ theme, onToggleTheme }) {
 
       <main id="landing-main" style={{
         padding: isMobile ? "24px 16px 64px" : "40px 24px 96px",
-        maxWidth: "780px",
+        maxWidth: COL,
         margin: "0 auto",
         width: "100%",
         boxSizing: "border-box",
@@ -77,7 +64,6 @@ export default function Landing({ theme, onToggleTheme }) {
           </p>
           <h1 style={{
             color: ACCENT,
-            fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontSize: isMobile ? "44px" : "60px",
             fontWeight: 600,
             margin: 0,
@@ -111,15 +97,7 @@ export default function Landing({ theme, onToggleTheme }) {
           border: "1px solid " + BORD,
           padding: "22px 24px"
         }}>
-          <h2 id="about-site" style={{
-            color: ACCENT,
-            fontSize: "13px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            margin: "0 0 14px",
-            fontWeight: 600,
-            fontFamily: "'Cormorant Garamond', Georgia, serif"
-          }}>About this site</h2>
+          <h2 id="about-site" className="elc-eyebrow">About this site</h2>
           <p style={{ color: TX, fontSize: "19px", lineHeight: 1.7, margin: 0 }}>
             This is the working site for the recovery of Ella Lyman Cabot's philosophical project.
             At present it hosts <strong>The Philosophical Web</strong> — an interactive map of the
@@ -137,14 +115,14 @@ export default function Landing({ theme, onToggleTheme }) {
           border: "1px solid " + BORD,
           padding: "22px 24px"
         }}>
-          <SectionHeading>Biography</SectionHeading>
+          <h2 id="bio" className="elc-eyebrow">Biography</h2>
           <p style={{ color: TX_SOFT, fontSize: "18px", lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
             A full biographical essay is in preparation and will appear here.
           </p>
         </section>
 
         <nav aria-label="Site sections" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <SectionHeading>Explore</SectionHeading>
+          <h2 className="elc-eyebrow">Explore</h2>
 
           <a
             className="lp-link"
@@ -232,10 +210,10 @@ export default function Landing({ theme, onToggleTheme }) {
           background: WARN_BG,
           border: "1px solid " + WARN_BORDER,
           borderRadius: "6px",
-          padding: "12px 16px"
+          padding: "10px 14px"
         }}>
-          <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
-          <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+          <span aria-hidden="true" style={{ color: WARN, fontSize: "16px", flexShrink: 0, lineHeight: 1.4 }}>⚠</span>
+          <p style={{ color: TX_SOFT, fontSize: "13.5px", lineHeight: 1.55, margin: 0 }}>
             <strong style={{ color: WARN }}>Still being updated.</strong> Some entries contain
             working hypotheses or inferences pending archival verification; these are flagged
             individually inside the Web.
@@ -243,6 +221,7 @@ export default function Landing({ theme, onToggleTheme }) {
         </aside>
 
       </main>
+      <Footer inset={COL} />
     </div>
   );
 }

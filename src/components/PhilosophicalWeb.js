@@ -9,6 +9,7 @@ import {
 } from "../theme";
 import { hrefFor, navigate } from "../router";
 import ThemeToggle from "./ThemeToggle";
+import Footer from "./Footer";
 
 const pwStyles = `
   .pw-node { transition: transform 200ms ease, opacity 200ms ease; }
@@ -34,9 +35,6 @@ const pwStyles = `
     transition: border-color 200ms ease, box-shadow 200ms ease;
   }
   .pw-search:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-faint-strong); }
-
-  .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-  .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: var(--accent); color: var(--bg); border-radius: 4px; font-weight: bold; z-index: 100; }
 
   @media (prefers-reduced-motion: reduce) {
     .pw-node, .pw-node .pw-dot, .pw-node .pw-ring, .pw-node text, .pw-edge { transition: none !important; }
@@ -168,7 +166,6 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
 
       <h1 style={{
         color: ACCENT,
-        fontFamily: "'Cormorant Garamond', Georgia, serif",
         fontSize: isMobile ? "34px" : "44px",
         fontWeight: 600,
         margin: "0 0 8px",
@@ -187,9 +184,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
 
       <form onSubmit={onSubmit} role="search" aria-label="Search figures" style={{
         display: "flex",
-        flexWrap: "wrap",
+        flexDirection: isMobile ? "column" : "row",
         gap: "10px",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
         justifyContent: "center",
         marginBottom: "10px",
         width: "100%",
@@ -202,14 +199,26 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
           aria-label="Search figures"
           value={query}
           onChange={function(e) { setQuery(e.target.value); }}
-          style={{ flex: "1 1 220px", minWidth: 0 }}
+          style={isMobile ? { width: "100%" } : { flex: "1 1 220px", minWidth: 0 }}
         />
         <button
           type="button"
           className="elc-btn"
           aria-pressed={linesOn}
+          style={isMobile ? { justifyContent: "center" } : undefined}
           onClick={function() { setLinesOn(function(v) { return !v; }); }}>
           {linesOn ? "Hide Lines" : "Show Lines"}
+        </button>
+        <button
+          type="button"
+          className="elc-btn"
+          aria-label="Open a random figure"
+          style={isMobile ? { justifyContent: "center" } : undefined}
+          onClick={function() {
+            const idx = Math.floor(Math.random() * DKEYS.length);
+            navigate({ name: "figure", figure: DKEYS[idx] });
+          }}>
+          Random
         </button>
       </form>
 
@@ -245,14 +254,38 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
 
           {RINGS_CFG.map(function(ring, ri) {
             return (
-              <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
-                fill="none" stroke={RING_COLORS[ri]} strokeWidth="2.2" strokeOpacity="0.55" />
+              <g key={ring.label}>
+                <circle cx={CX} cy={CY} r={ring.cr}
+                  fill="none" stroke={RING_COLORS[ri]} strokeWidth="2.2" strokeOpacity="0.55" />
+                <text
+                  x={CX} y={CY - ring.cr - 8}
+                  textAnchor="middle"
+                  fill={RING_COLORS[ri]}
+                  fontFamily="'Cormorant Garamond', Georgia, serif"
+                  fontSize="18"
+                  fontWeight="600"
+                  opacity="0.85"
+                  letterSpacing="2">
+                  {["I","II","III","IV"][ri]}
+                </text>
+              </g>
             );
           })}
 
           <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
             fill="none" stroke={OUTER_COLOR} strokeWidth="2.4" strokeOpacity="0.65"
             strokeDasharray="10 6" />
+          <text
+            x={CX} y={CY - OUTER_CFG.cr - 8}
+            textAnchor="middle"
+            fill={OUTER_COLOR}
+            fontFamily="'Cormorant Garamond', Georgia, serif"
+            fontSize="18"
+            fontWeight="600"
+            opacity="0.85"
+            letterSpacing="2">
+            V
+          </text>
 
           {linesOn && (
             <g aria-hidden="true">
@@ -281,7 +314,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
             const opacity = nodeOpacity(n);
             const ringR = n.isOuter ? (isHov ? 12 : 10) : (isHov ? 14 : 11);
             const dotR = n.isOuter ? (isHov ? 7 : 5) : (isHov ? 9 : 6);
-            const dotFill = n.isOuter ? (isHov ? OUTER_COLOR : "#7E6EAA") : n.color;
+            const dotFill = n.isOuter ? OUTER_COLOR : n.color;
             const labelColor = n.isOuter
               ? (isHov ? OUTER_COLOR : TX_SOFT)
               : (isHov ? n.color : TX);
@@ -351,6 +384,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
         </p>
       </aside>
 
+      <Footer inset="1100px" />
     </div>
   );
 }

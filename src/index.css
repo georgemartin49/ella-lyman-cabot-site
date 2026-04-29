@@ -7,9 +7,10 @@
   --rule: #B59E78;
   --text: #3B2E22;
   --text-soft: #6B5A47;
-  --text-muted: #8A7A65;
+  --text-muted: #6E5E48;
   --accent: #8B0E1A;
   --accent-soft: #B23A3A;
+  --accent-border: rgba(139, 14, 26, 0.32);
   --accent-faint: rgba(139, 14, 26, 0.08);
   --accent-faint-strong: rgba(139, 14, 26, 0.14);
   --warn: #8B5A18;
@@ -31,6 +32,7 @@
   --text-muted: #9E907E;
   --accent: #C9A24A;
   --accent-soft: #8B6F2C;
+  --accent-border: rgba(201, 162, 74, 0.45);
   --accent-faint: rgba(201, 162, 74, 0.10);
   --accent-faint-strong: rgba(201, 162, 74, 0.18);
   --warn: #C07840;
@@ -58,6 +60,19 @@ h1, h2, h3, h4 {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Skip-to-content link, used in every page. Hidden until focused. */
+.elc-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+.elc-skip:focus {
+  left: 16px; top: 16px;
+  width: auto; height: auto;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 4px;
+  font-weight: bold;
+  z-index: 100;
 }
 
 /* Reusable chrome button — works for back/home links and toggle buttons.
@@ -90,3 +105,30 @@ code {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Section eyebrow heading: small uppercase label above blocks. */
+.elc-eyebrow {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+/* Cards in detail view that link to another figure. */
+.elc-figure-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  margin: -4px -8px 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 180ms ease;
+}
+.elc-figure-link:hover, .elc-figure-link:focus-visible {
+  background: var(--accent-faint);
+  outline: none;
+}
+.elc-figure-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }

@@ -12,6 +12,7 @@ export const TX_SOFT = "var(--text-soft)";
 export const MUTED = "var(--text-muted)";
 export const ACCENT = "var(--accent)";
 export const ACCENT_SOFT = "var(--accent-soft)";
+export const ACCENT_BORDER = "var(--accent-border)";
 export const ACCENT_FAINT = "var(--accent-faint)";
 export const ACCENT_FAINT_STRONG = "var(--accent-faint-strong)";
 export const WARN = "var(--warn)";
