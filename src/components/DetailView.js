@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
-import { DATA } from "../data/figures";
+import { DATA, CITED_BY } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG } from "../data/rings";
 import {
   BG, SURF, BORD, ACCENT, ACCENT_FAINT,
@@ -67,6 +67,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
   const ringColor = isOuter ? OUTER_COLOR : (RING_COLORS[fig.ring - 1] || RING_COLORS[0]);
   const ringLabel = isOuter ? "Ring V" : "Ring " + fig.ring;
   const siblings = findSiblings(name);
+  const citedBy = CITED_BY[name] || [];
 
   const headerInline = isMobile
     ? { display: "flex", flexDirection: "column", alignItems: "stretch", gap: "12px" }
@@ -201,6 +202,30 @@ export default function DetailView({ name, theme, onToggleTheme }) {
             })}
           </div>
         </section>
+
+        {citedBy.length > 0 && (
+          <section aria-label="Cited by other entries" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+            <h3 className="elc-eyebrow">Cited by</h3>
+            <p style={{ color: MUTED, fontSize: "14px", margin: "0 0 14px", fontStyle: "italic" }}>
+              Figures whose entry treats {name} as an influence or reference point.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {citedBy.map(function(item, i) {
+                const fromFig = DATA[item.from];
+                const fromColor = (fromFig.ring === 5 ? OUTER_COLOR : RING_COLORS[fromFig.ring - 1] || RING_COLORS[0]);
+                return (
+                  <a key={i} href={hrefFor({ name: "figure", figure: item.from })} className="elc-figure-link">
+                    <span style={{ color: fromColor, fontSize: "17px", fontWeight: 600 }}>
+                      {item.from}
+                      <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>
+                    </span>
+                    <span style={{ color: MUTED, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item.note}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {(siblings.prev || siblings.next) && (
           <nav aria-label={"Other figures in " + ringLabel} style={{

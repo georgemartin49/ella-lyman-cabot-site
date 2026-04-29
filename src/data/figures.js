@@ -280,4 +280,20 @@ const DATA = {
 
 const DKEYS = Object.keys(DATA);
 
-export { DATA, DKEYS };
+// CITED_BY[figureKey] = [{ from, note }, ...] — built once by inverting `out` lists.
+const CITED_BY = (function() {
+  const map = {};
+  DKEYS.forEach(function(from) {
+    const fig = DATA[from];
+    if (!fig || !fig.out) return;
+    fig.out.forEach(function(item) {
+      const target = item[0];
+      if (!DATA[target]) return;
+      if (!map[target]) map[target] = [];
+      map[target].push({ from: from, note: item[1] });
+    });
+  });
+  return map;
+})();
+
+export { DATA, DKEYS, CITED_BY };

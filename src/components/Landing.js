@@ -152,6 +152,33 @@ export default function Landing({ theme, onToggleTheme }) {
             </span>
           </a>
 
+          <a
+            className="lp-link"
+            href={hrefFor({ name: "timeline" })}
+            style={{
+              display: "block",
+              background: SURF,
+              border: "1px solid " + BORD,
+              borderRadius: "6px",
+              padding: "22px 24px",
+              color: TX
+            }}>
+            <span style={{
+              display: "block",
+              color: ACCENT,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "24px",
+              fontWeight: 600,
+              marginBottom: "6px"
+            }}>
+              A Timeline →
+            </span>
+            <span style={{ display: "block", color: TX_SOFT, fontSize: "17px", lineHeight: 1.55 }}>
+              The same figures plotted by lifespan, with ELC's century marked. A complementary
+              view: lineage by time rather than by ring.
+            </span>
+          </a>
+
           <div
             aria-disabled="true"
             style={{

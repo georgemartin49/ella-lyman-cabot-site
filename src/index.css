@@ -132,3 +132,41 @@ code {
   outline: none;
 }
 .elc-figure-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+
+/* Print styles — clean monograph excerpts of detail pages.
+   Forces a paper-like palette regardless of theme; hides chrome. */
+@media print {
+  :root, [data-theme="dark"] {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: #999999;
+    --rule: #cccccc;
+    --text: #000000;
+    --text-soft: #333333;
+    --text-muted: #666666;
+    --accent: #5a0a13;
+    --accent-soft: #5a0a13;
+    --accent-border: #c0a0a0;
+    --accent-faint: transparent;
+    --accent-faint-strong: transparent;
+  }
+  html, body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .elc-btn, .elc-skip, [role="search"], nav[aria-label^="Other figures"],
+  header > [class*="elc-btn"], footer { display: none !important; }
+  /* Detail page header chrome */
+  header { background: transparent !important; border: none !important; padding: 0 !important; }
+  /* Sections become sequential, with tighter margins and no card backgrounds. */
+  main section {
+    background: transparent !important;
+    border: none !important;
+    border-top: 1px solid #999 !important;
+    border-radius: 0 !important;
+    padding: 12pt 0 !important;
+    page-break-inside: avoid;
+  }
+  main { padding: 0 !important; max-width: none !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+  /* Hide the SVG visualization on print — it's pixel-bound. */
+  svg { display: none !important; }
+}

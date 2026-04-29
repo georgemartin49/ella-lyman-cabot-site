@@ -86,7 +86,7 @@ function buildNodes() {
     const key = findKey(name);
     out.push({
       name, x: p.x, y: p.y,
-      ringIdx: -1,
+      ringIdx: 4,
       color: OUTER_COLOR,
       key,
       hasData: Boolean(key && DATA[key]),
@@ -94,6 +94,40 @@ function buildNodes() {
     });
   });
   return out;
+}
+
+// Compute the next node to focus when an arrow key is pressed.
+// Left/Right cycle within the same ring (data-only). Up/Down jump to the
+// nearest-by-angle data node in the inner / outer ring, with Ring IV (3) → Outer (4).
+function nextFocusNode(nodes, current, direction) {
+  if (!current) return null;
+  if (direction === "left" || direction === "right") {
+    const ring = nodes.filter(function(n) { return n.ringIdx === current.ringIdx && n.hasData; });
+    const idx = ring.indexOf(current);
+    if (idx === -1) return null;
+    const step = direction === "right" ? 1 : -1;
+    return ring[(idx + step + ring.length) % ring.length];
+  }
+  let targetIdx;
+  if (direction === "up") {
+    if (current.ringIdx === 0) return null;
+    targetIdx = current.ringIdx - 1;
+  } else {
+    if (current.ringIdx === 4) return null;
+    targetIdx = current.ringIdx + 1;
+  }
+  const candidates = nodes.filter(function(n) { return n.ringIdx === targetIdx && n.hasData; });
+  if (candidates.length === 0) return null;
+  const curAngle = Math.atan2(current.x - CX, -(current.y - CY));
+  let best = candidates[0];
+  let bestDist = Infinity;
+  candidates.forEach(function(c) {
+    const a = Math.atan2(c.x - CX, -(c.y - CY));
+    let d = Math.abs(a - curAngle);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    if (d < bestDist) { bestDist = d; best = c; }
+  });
+  return best;
 }
 
 function buildEdges(nodes) {
@@ -129,30 +163,46 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
   const edges = useMemo(function() { return buildEdges(nodes); }, [nodes]);
 
   const q = query.trim().toLowerCase();
-  function isMatch(name) {
+  function isMatch(node) {
     if (!q) return true;
-    return name.toLowerCase().includes(q);
+    if (node.name.toLowerCase().includes(q)) return true;
+    const fig = node.key && DATA[node.key];
+    if (!fig) return false;
+    if (fig.desc && fig.desc.toLowerCase().includes(q)) return true;
+    if (fig.elc && fig.elc.toLowerCase().includes(q)) return true;
+    if (fig.title && fig.title.toLowerCase().includes(q)) return true;
+    return false;
   }
-  const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n.name); }).length : 0;
+  const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n); }).length : 0;
 
-  function handleNodeKey(e, hasData, key) {
-    if (!hasData) return;
+  function handleNodeKey(e, node) {
+    if (!node.hasData) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      navigate({ name: "figure", figure: key });
+      navigate({ name: "figure", figure: node.key });
+      return;
+    }
+    const dirMap = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+    if (dirMap[e.key]) {
+      e.preventDefault();
+      const next = nextFocusNode(nodes, node, dirMap[e.key]);
+      if (next && next.key) {
+        const el = document.getElementById("pw-node-" + next.key);
+        if (el && typeof el.focus === "function") el.focus();
+      }
     }
   }
 
   function onSubmit(e) {
     e.preventDefault();
     if (!q) return;
-    const matches = nodes.filter(function(n) { return n.hasData && isMatch(n.name); });
+    const matches = nodes.filter(function(n) { return n.hasData && isMatch(n); });
     if (matches.length === 1) navigate({ name: "figure", figure: matches[0].key });
   }
 
   function nodeOpacity(n) {
     if (!q) return 1;
-    return isMatch(n.name) ? 1 : 0.18;
+    return isMatch(n) ? 1 : 0.18;
   }
 
   return (
@@ -195,7 +245,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
         <input
           type="search"
           className="pw-search"
-          placeholder="Search figures…"
+          placeholder="Search names or text…"
           aria-label="Search figures"
           value={query}
           onChange={function(e) { setQuery(e.target.value); }}
@@ -321,6 +371,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
             const fontSize = n.isOuter ? 16 : 18;
             return (
               <g key={i}
+                id={n.hasData ? "pw-node-" + n.key : undefined}
                 className={"pw-node" + (n.hasData ? " pw-node-active" : "")}
                 role={n.hasData ? "button" : undefined}
                 tabIndex={n.hasData ? 0 : undefined}
@@ -330,7 +381,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
                 onFocus={function() { setTip(n.name); }}
                 onBlur={function() { setTip(null); }}
                 onClick={function() { if (n.hasData) navigate({ name: "figure", figure: n.key }); }}
-                onKeyDown={function(e) { handleNodeKey(e, n.hasData, n.key); }}
+                onKeyDown={function(e) { handleNodeKey(e, n); }}
                 style={{ cursor: n.hasData ? "pointer" : "default", outline: "none", opacity }}>
                 {n.hasData && (
                   <circle cx={n.x} cy={n.y} r={ringR}

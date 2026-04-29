@@ -9,6 +9,7 @@ function parseRoute(hash) {
   const path = (hash || "").replace(/^#/, "");
   if (path === "" || path === "/") return { name: "landing" };
   if (path === "/web") return { name: "web" };
+  if (path === "/timeline") return { name: "timeline" };
   const m = path.match(/^\/figure\/(.+)$/);
   if (m) {
     try { return { name: "figure", figure: decodeURIComponent(m[1]) }; }
@@ -32,6 +33,7 @@ export function useRoute() {
 export function hrefFor(route) {
   if (route.name === "landing") return "#/";
   if (route.name === "web") return "#/web";
+  if (route.name === "timeline") return "#/timeline";
   if (route.name === "figure") return "#/figure/" + encodeURIComponent(route.figure);
   return "#/";
 }
