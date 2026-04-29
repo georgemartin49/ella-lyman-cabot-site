@@ -727,59 +727,76 @@ const DATA = {
 const DKEYS = Object.keys(DATA);
 
 // Per-figure metadata used by the web's people filters.
-//   gender: "m" | "f" | "other"   (for composites where all members share a gender, use that gender; "other" for non-personal entries like Ubuntu)
-//   wellKnown: true | false       (rough proxy: would a typical philosophy undergrad recognise the name?)
-// Merged into DATA below so existing code that reads `fig.gender` / `fig.wellKnown` works without per-entry edits.
+//   gender:    "m" | "f" | "other"   (composites with same-gender members get that gender; "other" for non-personal entries like Ubuntu)
+//   wellKnown: true | false           (rough proxy: would a typical philosophy undergrad recognise the name?)
+//   region:    "American-NE" | "American-Other" | "British" | "French" | "German" | "Greek" | "Other"
+//                — "American-NE" = Boston / Cambridge / Wellesley / New England
+//                — "American-Other" = elsewhere in the US (Chicago, NY, Bryn Mawr, etc.)
+//                — Composites are tagged by their primary cultural location.
+// Merged into DATA below so existing code that reads `fig.gender` etc. works without per-entry edits.
 const META = {
-  Emerson:        { gender:"m", wellKnown:true  },
-  James:          { gender:"m", wellKnown:true  },
-  Weil:           { gender:"f", wellKnown:true  },
-  "P-Pattison":   { gender:"m", wellKnown:false },
-  Royce:          { gender:"m", wellKnown:false },
-  Palmer:         { gender:"m", wellKnown:false },
-  Caird:          { gender:"m", wellKnown:false },
-  Bosanquet:      { gender:"m", wellKnown:false },
-  Murdoch:        { gender:"f", wellKnown:true  },
-  "Du Bois":      { gender:"m", wellKnown:true  },
-  "T.H. Green":   { gender:"m", wellKnown:true  },
-  Calkins:        { gender:"f", wellKnown:false },
-  Follett:        { gender:"f", wellKnown:false },
-  Korsgaard:      { gender:"f", wellKnown:false },
-  Bergson:        { gender:"m", wellKnown:true  },
-  Alain:          { gender:"m", wellKnown:false },
-  Buchler:        { gender:"m", wellKnown:false },
-  Bowne:          { gender:"m", wellKnown:false },
-  Ritchie:        { gender:"m", wellKnown:false },
-  Aristotle:      { gender:"m", wellKnown:true  },
-  Langer:         { gender:"f", wellKnown:false },
-  Hegel:          { gender:"m", wellKnown:true  },
-  Sartre:         { gender:"m", wellKnown:true  },
-  Dewey:          { gender:"m", wellKnown:true  },
-  Kant:           { gender:"m", wellKnown:true  },
-  Peirce:         { gender:"m", wellKnown:true  },
-  Bradley:        { gender:"m", wellKnown:true  },
-  "Hume/Parfit":  { gender:"m", wellKnown:true  },
-  "Moore/Russell":{ gender:"m", wellKnown:true  },
-  Metzinger:      { gender:"m", wellKnown:false },
-  "Foucault(E)":  { gender:"m", wellKnown:true  },
-  Mencius:        { gender:"m", wellKnown:true  },
-  "Epictetus/M.A.":{ gender:"m", wellKnown:true  },
-  Ubuntu:         { gender:"other", wellKnown:false },
-  Buber:          { gender:"m", wellKnown:true  },
-  "Maine de Biran":{ gender:"m", wellKnown:false },
-  Freire:         { gender:"m", wellKnown:true  },
-  Bakhtin:        { gender:"m", wellKnown:true  },
-  Addams:         { gender:"f", wellKnown:true  },
-  Parker:         { gender:"m", wellKnown:false },
-  "De Laguna":    { gender:"f", wellKnown:false },
-  Perry:          { gender:"m", wellKnown:true  },
-  Schiller:       { gender:"m", wellKnown:false },
-  "F. Kelley":    { gender:"f", wellKnown:true  },
+  Emerson:        { gender:"m", wellKnown:true,  region:"American-NE" },
+  James:          { gender:"m", wellKnown:true,  region:"American-NE" },
+  Weil:           { gender:"f", wellKnown:true,  region:"French" },
+  "P-Pattison":   { gender:"m", wellKnown:false, region:"British" },
+  Royce:          { gender:"m", wellKnown:false, region:"American-NE" },
+  Palmer:         { gender:"m", wellKnown:false, region:"American-NE" },
+  Caird:          { gender:"m", wellKnown:false, region:"British" },
+  Bosanquet:      { gender:"m", wellKnown:false, region:"British" },
+  Murdoch:        { gender:"f", wellKnown:true,  region:"British" },
+  "Du Bois":      { gender:"m", wellKnown:true,  region:"American-NE" },
+  "T.H. Green":   { gender:"m", wellKnown:true,  region:"British" },
+  Calkins:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Follett:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Korsgaard:      { gender:"f", wellKnown:false, region:"American-NE" },
+  Bergson:        { gender:"m", wellKnown:true,  region:"French" },
+  Alain:          { gender:"m", wellKnown:false, region:"French" },
+  Buchler:        { gender:"m", wellKnown:false, region:"American-Other" },
+  Bowne:          { gender:"m", wellKnown:false, region:"American-NE" },
+  Ritchie:        { gender:"m", wellKnown:false, region:"British" },
+  Aristotle:      { gender:"m", wellKnown:true,  region:"Greek" },
+  Langer:         { gender:"f", wellKnown:false, region:"American-NE" },
+  Hocking:        { gender:"m", wellKnown:false, region:"American-NE" },
+  "J.E. Cabot":   { gender:"m", wellKnown:false, region:"American-NE" },
+  "E.G. Balch":   { gender:"f", wellKnown:false, region:"American-NE" },
+  "H. Bosanquet": { gender:"f", wellKnown:false, region:"British" },
+  "M. Sinclair":  { gender:"f", wellKnown:false, region:"British" },
+  Scudder:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Pratt:          { gender:"m", wellKnown:false, region:"American-NE" },
+  "Hoernlé":      { gender:"m", wellKnown:false, region:"Other" },
+  Thompson:       { gender:"f", wellKnown:false, region:"American-NE" },
+  Haldane:        { gender:"m", wellKnown:false, region:"British" },
+  Hegel:          { gender:"m", wellKnown:true,  region:"German" },
+  Sartre:         { gender:"m", wellKnown:true,  region:"French" },
+  Dewey:          { gender:"m", wellKnown:true,  region:"American-Other" },
+  Kant:           { gender:"m", wellKnown:true,  region:"German" },
+  Peirce:         { gender:"m", wellKnown:true,  region:"American-NE" },
+  Bradley:        { gender:"m", wellKnown:true,  region:"British" },
+  "C.I. Lewis":   { gender:"m", wellKnown:false, region:"American-NE" },
+  "T.S. Eliot":   { gender:"m", wellKnown:true,  region:"British" },
+  "Hume/Parfit":  { gender:"m", wellKnown:true,  region:"British" },
+  "Moore/Russell":{ gender:"m", wellKnown:true,  region:"British" },
+  Metzinger:      { gender:"m", wellKnown:false, region:"German" },
+  "Foucault(E)":  { gender:"m", wellKnown:true,  region:"French" },
+  Mencius:        { gender:"m", wellKnown:true,  region:"Other" },
+  "Epictetus/M.A.":{ gender:"m", wellKnown:true,  region:"Greek" },
+  Ubuntu:         { gender:"other", wellKnown:false, region:"Other" },
+  Buber:          { gender:"m", wellKnown:true,  region:"Other" },
+  "Maine de Biran":{ gender:"m", wellKnown:false, region:"French" },
+  Freire:         { gender:"m", wellKnown:true,  region:"Other" },
+  Bakhtin:        { gender:"m", wellKnown:true,  region:"Other" },
+  Addams:         { gender:"f", wellKnown:true,  region:"American-Other" },
+  Parker:         { gender:"m", wellKnown:false, region:"American-Other" },
+  "De Laguna":    { gender:"f", wellKnown:false, region:"American-Other" },
+  Perry:          { gender:"m", wellKnown:true,  region:"American-NE" },
+  Schiller:       { gender:"m", wellKnown:false, region:"British" },
+  "F. Kelley":    { gender:"f", wellKnown:true,  region:"American-Other" },
 };
 DKEYS.forEach(function(k) {
-  const m = META[k] || { gender:"other", wellKnown:false };
+  const m = META[k] || { gender:"other", wellKnown:false, region:"Other" };
   DATA[k].gender = m.gender;
   DATA[k].wellKnown = m.wellKnown;
+  DATA[k].region = m.region || "Other";
   DATA[k].hasArchive = Boolean(DATA[k].archives && DATA[k].archives.length > 0);
 });
 
@@ -1684,20 +1701,36 @@ function Timeline({ theme, onToggleTheme }) {
   const [viewMode, setViewMode] = useState("chrono");
   // 5 rings; each can be toggled on/off. Default all on.
   const [enabledRings, setEnabledRings] = useState([true, true, true, true, true]);
+  // Region filter: "all" or one of the META region values.
+  const [regionF, setRegionF] = useState("all");
+  // Zoom preset for the year axis.
+  const ZOOM_PRESETS = [
+    { id:"all",       label:"All",        from:1700, to:null },
+    { id:"pre1850",   label:"Pre-1850",   from:1700, to:1850 },
+    { id:"1800-1900", label:"1800–1900",  from:1800, to:1900 },
+    { id:"1850-1950", label:"1850–1950",  from:1850, to:1950 },
+    { id:"1900-2000", label:"1900–2000",  from:1900, to:2000 },
+    { id:"post1950",  label:"Post-1950",  from:1950, to:null },
+  ];
+  const [zoomId, setZoomId] = useState("all");
+  const zoomPreset = ZOOM_PRESETS.find(function(p) { return p.id === zoomId; }) || ZOOM_PRESETS[0];
 
-  // Build full set of entries with parsed ranges.
+  // Build full set of entries with parsed ranges, applying region + zoom filters.
   const allEntries = [];
   DKEYS.forEach(function(key) {
     const fig = DATA[key];
     const ranges = parseRanges(fig.dates);
     if (!ranges) return;
+    if (regionF !== "all" && fig.region !== regionF) return;
     ranges.forEach(function(r, idx) {
       // Skip pre-1700 figures so the modern era reads clearly.
-      // (Mencius, Aristotle, Epictetus/Marcus Aurelius are listed below the chart.)
       if (r.end < 1700) return;
+      // Apply zoom: only include ranges that overlap the visible window.
+      if (r.end < zoomPreset.from) return;
+      if (zoomPreset.to !== null && r.start > zoomPreset.to) return;
       allEntries.push({
         key,
-        ringIdx: fig.ring - 1, // 0-4
+        ringIdx: fig.ring - 1,
         title: fig.title,
         dates: fig.dates,
         start: r.start,
@@ -1736,11 +1769,14 @@ function Timeline({ theme, onToggleTheme }) {
     return r.every(function(range) { return range.end < 1700; });
   });
 
-  // Axis spans 1700 → most recent figure (or ELC's end). The lower bound is
-  // pinned at 1700 so toggling rings doesn't reflow the year scale.
-  const minYear = 1700;
-  const maxYear = Math.max.apply(null, allEntries.map(function(e) { return e.end; }).concat([ELC.end]));
-  const span = maxYear - minYear;
+  // Axis spans the active zoom window (defaulting to 1700 → present). When
+  // zoomed, the bounds are exactly the preset's from/to so the chart fills
+  // the available width.
+  const minYear = zoomPreset.from;
+  const maxYear = zoomPreset.to !== null
+    ? zoomPreset.to
+    : Math.max.apply(null, allEntries.map(function(e) { return e.end; }).concat([ELC.end]));
+  const span = Math.max(1, maxYear - minYear);
 
   const W = 1000;
   const PAD_L = isMobile ? 96 : 200;
@@ -1759,8 +1795,9 @@ function Timeline({ theme, onToggleTheme }) {
   const sectionsH = sections.length * (headerH + SECTION_GAP) + totalRows * ROW_H;
   const H = TOP + sectionsH + BOTTOM;
 
-  // Tick marks: 25y on phone, 50y on desktop across the modern range.
-  const tickStep = isMobile ? 25 : 50;
+  // Tick marks: pick a step appropriate to the zoom span so we get
+  // ~5–10 ticks visible (10y for short zooms, up to 50y for the full view).
+  const tickStep = span <= 60 ? 10 : span <= 120 ? 20 : span <= 250 ? 25 : 50;
   const firstTick = Math.ceil(minYear / tickStep) * tickStep;
   const ticks = [];
   for (let y = firstTick; y <= maxYear; y += tickStep) ticks.push(y);
@@ -1855,6 +1892,63 @@ function Timeline({ theme, onToggleTheme }) {
                 }}>
                 <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: enabled ? c : "transparent", border: "1.5px solid " + c, marginRight: "6px", verticalAlign: "middle", boxSizing: "border-box" }} />
                 {ringDisplayLabel(ri)}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px"
+        }}>
+          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Region</span>
+          {[
+            ["all","All"],
+            ["American-NE","Am · NE"],
+            ["American-Other","Am · Other"],
+            ["British","British"],
+            ["French","French"],
+            ["German","German"],
+            ["Greek","Greek"],
+            ["Other","Other"],
+          ].map(function(opt) {
+            const pressed = regionF === opt[0];
+            return (
+              <button key={opt[0]}
+                type="button"
+                className="elc-btn"
+                aria-pressed={pressed}
+                style={{ fontSize: "14px", padding: "5px 10px", opacity: pressed ? 1 : 0.7 }}
+                onClick={function() { setRegionF(opt[0]); }}>
+                {opt[1]}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px"
+        }}>
+          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Zoom</span>
+          {ZOOM_PRESETS.map(function(p) {
+            const pressed = zoomId === p.id;
+            return (
+              <button key={p.id}
+                type="button"
+                className="elc-btn"
+                aria-pressed={pressed}
+                style={{ fontSize: "14px", padding: "5px 10px", opacity: pressed ? 1 : 0.7 }}
+                onClick={function() { setZoomId(p.id); }}>
+                {p.label}
               </button>
             );
           })}
@@ -2202,6 +2296,7 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   const [genderF, setGenderF] = useState(function() { return parseGender(initialQuery && initialQuery.g); });
   const [knownF, setKnownF] = useState(function() { return parseTri(initialQuery && initialQuery.k); });
   const [archF, setArchF] = useState(function() { return parseTri(initialQuery && initialQuery.a); });
+  const [regionF, setRegionF] = useState(function() { return (initialQuery && initialQuery.r) || "all"; });
 
   useEffect(function() {
     replaceQuery("web", {
@@ -2211,8 +2306,9 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
       g: genderF === "all" ? "" : genderF,
       k: knownF === "all" ? "" : knownF,
       a: archF === "all" ? "" : archF,
+      r: regionF === "all" ? "" : regionF,
     });
-  }, [query, linesMode, enabledRings, genderF, knownF, archF]);
+  }, [query, linesMode, enabledRings, genderF, knownF, archF, regionF]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -2277,16 +2373,17 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   })();
 
   function passesPeopleFilters(n) {
-    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all";
+    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all" && regionF === "all";
     const fig = DATA[n.key];
     if (genderF !== "all" && fig.gender !== genderF) return false;
     if (knownF === "yes" && !fig.wellKnown) return false;
     if (knownF === "no"  &&  fig.wellKnown) return false;
     if (archF === "yes" && !fig.hasArchive) return false;
     if (archF === "no"  &&  fig.hasArchive) return false;
+    if (regionF !== "all" && fig.region !== regionF) return false;
     return true;
   }
-  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all";
+  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all" || regionF !== "all";
   const visibleCount = peopleFiltersActive
     ? nodes.filter(function(n) { return n.hasData && passesPeopleFilters(n); }).length
     : nodes.filter(function(n) { return n.hasData; }).length;
@@ -2437,7 +2534,7 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
           {peopleFiltersActive && (
             <button type="button" className="elc-btn"
               style={{ fontSize: "13px", padding: "5px 10px" }}
-              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); }}>
+              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); setRegionF("all"); }}>
               Reset
             </button>
           )}
@@ -2453,6 +2550,7 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
             { label: "Gender",  value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
             { label: "Known",   value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
             { label: "Archive", value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
+            { label: "Region",  value: regionF, set: setRegionF, opts: [["all","All"],["American-NE","Am · NE"],["American-Other","Am · Other"],["British","British"],["French","French"],["German","German"],["Greek","Greek"],["Other","Other"]] },
           ].map(function(group, gi) {
             return (
               <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>

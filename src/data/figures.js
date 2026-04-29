@@ -472,59 +472,76 @@ const DATA = {
 const DKEYS = Object.keys(DATA);
 
 // Per-figure metadata used by the web's people filters.
-//   gender: "m" | "f" | "other"   (for composites where all members share a gender, use that gender; "other" for non-personal entries like Ubuntu)
-//   wellKnown: true | false       (rough proxy: would a typical philosophy undergrad recognise the name?)
-// Merged into DATA below so existing code that reads `fig.gender` / `fig.wellKnown` works without per-entry edits.
+//   gender:    "m" | "f" | "other"   (composites with same-gender members get that gender; "other" for non-personal entries like Ubuntu)
+//   wellKnown: true | false           (rough proxy: would a typical philosophy undergrad recognise the name?)
+//   region:    "American-NE" | "American-Other" | "British" | "French" | "German" | "Greek" | "Other"
+//                — "American-NE" = Boston / Cambridge / Wellesley / New England
+//                — "American-Other" = elsewhere in the US (Chicago, NY, Bryn Mawr, etc.)
+//                — Composites are tagged by their primary cultural location.
+// Merged into DATA below so existing code that reads `fig.gender` etc. works without per-entry edits.
 const META = {
-  Emerson:        { gender:"m", wellKnown:true  },
-  James:          { gender:"m", wellKnown:true  },
-  Weil:           { gender:"f", wellKnown:true  },
-  "P-Pattison":   { gender:"m", wellKnown:false },
-  Royce:          { gender:"m", wellKnown:false },
-  Palmer:         { gender:"m", wellKnown:false },
-  Caird:          { gender:"m", wellKnown:false },
-  Bosanquet:      { gender:"m", wellKnown:false },
-  Murdoch:        { gender:"f", wellKnown:true  },
-  "Du Bois":      { gender:"m", wellKnown:true  },
-  "T.H. Green":   { gender:"m", wellKnown:true  },
-  Calkins:        { gender:"f", wellKnown:false },
-  Follett:        { gender:"f", wellKnown:false },
-  Korsgaard:      { gender:"f", wellKnown:false },
-  Bergson:        { gender:"m", wellKnown:true  },
-  Alain:          { gender:"m", wellKnown:false },
-  Buchler:        { gender:"m", wellKnown:false },
-  Bowne:          { gender:"m", wellKnown:false },
-  Ritchie:        { gender:"m", wellKnown:false },
-  Aristotle:      { gender:"m", wellKnown:true  },
-  Langer:         { gender:"f", wellKnown:false },
-  Hegel:          { gender:"m", wellKnown:true  },
-  Sartre:         { gender:"m", wellKnown:true  },
-  Dewey:          { gender:"m", wellKnown:true  },
-  Kant:           { gender:"m", wellKnown:true  },
-  Peirce:         { gender:"m", wellKnown:true  },
-  Bradley:        { gender:"m", wellKnown:true  },
-  "Hume/Parfit":  { gender:"m", wellKnown:true  },
-  "Moore/Russell":{ gender:"m", wellKnown:true  },
-  Metzinger:      { gender:"m", wellKnown:false },
-  "Foucault(E)":  { gender:"m", wellKnown:true  },
-  Mencius:        { gender:"m", wellKnown:true  },
-  "Epictetus/M.A.":{ gender:"m", wellKnown:true  },
-  Ubuntu:         { gender:"other", wellKnown:false },
-  Buber:          { gender:"m", wellKnown:true  },
-  "Maine de Biran":{ gender:"m", wellKnown:false },
-  Freire:         { gender:"m", wellKnown:true  },
-  Bakhtin:        { gender:"m", wellKnown:true  },
-  Addams:         { gender:"f", wellKnown:true  },
-  Parker:         { gender:"m", wellKnown:false },
-  "De Laguna":    { gender:"f", wellKnown:false },
-  Perry:          { gender:"m", wellKnown:true  },
-  Schiller:       { gender:"m", wellKnown:false },
-  "F. Kelley":    { gender:"f", wellKnown:true  },
+  Emerson:        { gender:"m", wellKnown:true,  region:"American-NE" },
+  James:          { gender:"m", wellKnown:true,  region:"American-NE" },
+  Weil:           { gender:"f", wellKnown:true,  region:"French" },
+  "P-Pattison":   { gender:"m", wellKnown:false, region:"British" },
+  Royce:          { gender:"m", wellKnown:false, region:"American-NE" },
+  Palmer:         { gender:"m", wellKnown:false, region:"American-NE" },
+  Caird:          { gender:"m", wellKnown:false, region:"British" },
+  Bosanquet:      { gender:"m", wellKnown:false, region:"British" },
+  Murdoch:        { gender:"f", wellKnown:true,  region:"British" },
+  "Du Bois":      { gender:"m", wellKnown:true,  region:"American-NE" },
+  "T.H. Green":   { gender:"m", wellKnown:true,  region:"British" },
+  Calkins:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Follett:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Korsgaard:      { gender:"f", wellKnown:false, region:"American-NE" },
+  Bergson:        { gender:"m", wellKnown:true,  region:"French" },
+  Alain:          { gender:"m", wellKnown:false, region:"French" },
+  Buchler:        { gender:"m", wellKnown:false, region:"American-Other" },
+  Bowne:          { gender:"m", wellKnown:false, region:"American-NE" },
+  Ritchie:        { gender:"m", wellKnown:false, region:"British" },
+  Aristotle:      { gender:"m", wellKnown:true,  region:"Greek" },
+  Langer:         { gender:"f", wellKnown:false, region:"American-NE" },
+  Hocking:        { gender:"m", wellKnown:false, region:"American-NE" },
+  "J.E. Cabot":   { gender:"m", wellKnown:false, region:"American-NE" },
+  "E.G. Balch":   { gender:"f", wellKnown:false, region:"American-NE" },
+  "H. Bosanquet": { gender:"f", wellKnown:false, region:"British" },
+  "M. Sinclair":  { gender:"f", wellKnown:false, region:"British" },
+  Scudder:        { gender:"f", wellKnown:false, region:"American-NE" },
+  Pratt:          { gender:"m", wellKnown:false, region:"American-NE" },
+  "Hoernlé":      { gender:"m", wellKnown:false, region:"Other" },
+  Thompson:       { gender:"f", wellKnown:false, region:"American-NE" },
+  Haldane:        { gender:"m", wellKnown:false, region:"British" },
+  Hegel:          { gender:"m", wellKnown:true,  region:"German" },
+  Sartre:         { gender:"m", wellKnown:true,  region:"French" },
+  Dewey:          { gender:"m", wellKnown:true,  region:"American-Other" },
+  Kant:           { gender:"m", wellKnown:true,  region:"German" },
+  Peirce:         { gender:"m", wellKnown:true,  region:"American-NE" },
+  Bradley:        { gender:"m", wellKnown:true,  region:"British" },
+  "C.I. Lewis":   { gender:"m", wellKnown:false, region:"American-NE" },
+  "T.S. Eliot":   { gender:"m", wellKnown:true,  region:"British" },
+  "Hume/Parfit":  { gender:"m", wellKnown:true,  region:"British" },
+  "Moore/Russell":{ gender:"m", wellKnown:true,  region:"British" },
+  Metzinger:      { gender:"m", wellKnown:false, region:"German" },
+  "Foucault(E)":  { gender:"m", wellKnown:true,  region:"French" },
+  Mencius:        { gender:"m", wellKnown:true,  region:"Other" },
+  "Epictetus/M.A.":{ gender:"m", wellKnown:true,  region:"Greek" },
+  Ubuntu:         { gender:"other", wellKnown:false, region:"Other" },
+  Buber:          { gender:"m", wellKnown:true,  region:"Other" },
+  "Maine de Biran":{ gender:"m", wellKnown:false, region:"French" },
+  Freire:         { gender:"m", wellKnown:true,  region:"Other" },
+  Bakhtin:        { gender:"m", wellKnown:true,  region:"Other" },
+  Addams:         { gender:"f", wellKnown:true,  region:"American-Other" },
+  Parker:         { gender:"m", wellKnown:false, region:"American-Other" },
+  "De Laguna":    { gender:"f", wellKnown:false, region:"American-Other" },
+  Perry:          { gender:"m", wellKnown:true,  region:"American-NE" },
+  Schiller:       { gender:"m", wellKnown:false, region:"British" },
+  "F. Kelley":    { gender:"f", wellKnown:true,  region:"American-Other" },
 };
 DKEYS.forEach(function(k) {
-  const m = META[k] || { gender:"other", wellKnown:false };
+  const m = META[k] || { gender:"other", wellKnown:false, region:"Other" };
   DATA[k].gender = m.gender;
   DATA[k].wellKnown = m.wellKnown;
+  DATA[k].region = m.region || "Other";
   DATA[k].hasArchive = Boolean(DATA[k].archives && DATA[k].archives.length > 0);
 });
 

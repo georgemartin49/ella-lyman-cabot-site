@@ -53,20 +53,36 @@ export default function Timeline({ theme, onToggleTheme }) {
   const [viewMode, setViewMode] = useState("chrono");
   // 5 rings; each can be toggled on/off. Default all on.
   const [enabledRings, setEnabledRings] = useState([true, true, true, true, true]);
+  // Region filter: "all" or one of the META region values.
+  const [regionF, setRegionF] = useState("all");
+  // Zoom preset for the year axis.
+  const ZOOM_PRESETS = [
+    { id:"all",       label:"All",        from:1700, to:null },
+    { id:"pre1850",   label:"Pre-1850",   from:1700, to:1850 },
+    { id:"1800-1900", label:"1800–1900",  from:1800, to:1900 },
+    { id:"1850-1950", label:"1850–1950",  from:1850, to:1950 },
+    { id:"1900-2000", label:"1900–2000",  from:1900, to:2000 },
+    { id:"post1950",  label:"Post-1950",  from:1950, to:null },
+  ];
+  const [zoomId, setZoomId] = useState("all");
+  const zoomPreset = ZOOM_PRESETS.find(function(p) { return p.id === zoomId; }) || ZOOM_PRESETS[0];
 
-  // Build full set of entries with parsed ranges.
+  // Build full set of entries with parsed ranges, applying region + zoom filters.
   const allEntries = [];
   DKEYS.forEach(function(key) {
     const fig = DATA[key];
     const ranges = parseRanges(fig.dates);
     if (!ranges) return;
+    if (regionF !== "all" && fig.region !== regionF) return;
     ranges.forEach(function(r, idx) {
       // Skip pre-1700 figures so the modern era reads clearly.
-      // (Mencius, Aristotle, Epictetus/Marcus Aurelius are listed below the chart.)
       if (r.end < 1700) return;
+      // Apply zoom: only include ranges that overlap the visible window.
+      if (r.end < zoomPreset.from) return;
+      if (zoomPreset.to !== null && r.start > zoomPreset.to) return;
       allEntries.push({
         key,
-        ringIdx: fig.ring - 1, // 0-4
+        ringIdx: fig.ring - 1,
         title: fig.title,
         dates: fig.dates,
         start: r.start,
@@ -105,11 +121,14 @@ export default function Timeline({ theme, onToggleTheme }) {
     return r.every(function(range) { return range.end < 1700; });
   });
 
-  // Axis spans 1700 → most recent figure (or ELC's end). The lower bound is
-  // pinned at 1700 so toggling rings doesn't reflow the year scale.
-  const minYear = 1700;
-  const maxYear = Math.max.apply(null, allEntries.map(function(e) { return e.end; }).concat([ELC.end]));
-  const span = maxYear - minYear;
+  // Axis spans the active zoom window (defaulting to 1700 → present). When
+  // zoomed, the bounds are exactly the preset's from/to so the chart fills
+  // the available width.
+  const minYear = zoomPreset.from;
+  const maxYear = zoomPreset.to !== null
+    ? zoomPreset.to
+    : Math.max.apply(null, allEntries.map(function(e) { return e.end; }).concat([ELC.end]));
+  const span = Math.max(1, maxYear - minYear);
 
   const W = 1000;
   const PAD_L = isMobile ? 96 : 200;
@@ -128,8 +147,9 @@ export default function Timeline({ theme, onToggleTheme }) {
   const sectionsH = sections.length * (headerH + SECTION_GAP) + totalRows * ROW_H;
   const H = TOP + sectionsH + BOTTOM;
 
-  // Tick marks: 25y on phone, 50y on desktop across the modern range.
-  const tickStep = isMobile ? 25 : 50;
+  // Tick marks: pick a step appropriate to the zoom span so we get
+  // ~5–10 ticks visible (10y for short zooms, up to 50y for the full view).
+  const tickStep = span <= 60 ? 10 : span <= 120 ? 20 : span <= 250 ? 25 : 50;
   const firstTick = Math.ceil(minYear / tickStep) * tickStep;
   const ticks = [];
   for (let y = firstTick; y <= maxYear; y += tickStep) ticks.push(y);
@@ -224,6 +244,63 @@ export default function Timeline({ theme, onToggleTheme }) {
                 }}>
                 <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: enabled ? c : "transparent", border: "1.5px solid " + c, marginRight: "6px", verticalAlign: "middle", boxSizing: "border-box" }} />
                 {ringDisplayLabel(ri)}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px"
+        }}>
+          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Region</span>
+          {[
+            ["all","All"],
+            ["American-NE","Am · NE"],
+            ["American-Other","Am · Other"],
+            ["British","British"],
+            ["French","French"],
+            ["German","German"],
+            ["Greek","Greek"],
+            ["Other","Other"],
+          ].map(function(opt) {
+            const pressed = regionF === opt[0];
+            return (
+              <button key={opt[0]}
+                type="button"
+                className="elc-btn"
+                aria-pressed={pressed}
+                style={{ fontSize: "14px", padding: "5px 10px", opacity: pressed ? 1 : 0.7 }}
+                onClick={function() { setRegionF(opt[0]); }}>
+                {opt[1]}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px"
+        }}>
+          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Zoom</span>
+          {ZOOM_PRESETS.map(function(p) {
+            const pressed = zoomId === p.id;
+            return (
+              <button key={p.id}
+                type="button"
+                className="elc-btn"
+                aria-pressed={pressed}
+                style={{ fontSize: "14px", padding: "5px 10px", opacity: pressed ? 1 : 0.7 }}
+                onClick={function() { setZoomId(p.id); }}>
+                {p.label}
               </button>
             );
           })}
