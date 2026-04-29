@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, CX, CY } from "../data/rings";
@@ -7,7 +7,7 @@ import {
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER, GOLD, GOLD_TEXT,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
-import { hrefFor, navigate } from "../router";
+import { hrefFor, navigate, replaceQuery } from "../router";
 import ThemeToggle from "./ThemeToggle";
 import Footer from "./Footer";
 
@@ -152,10 +152,14 @@ function buildEdges(nodes) {
   return edges;
 }
 
-export default function PhilosophicalWeb({ theme, onToggleTheme }) {
+export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   const [tip, setTip] = useState(null);
-  const [query, setQuery] = useState("");
-  const [linesOn, setLinesOn] = useState(false);
+  const [query, setQuery] = useState(function() { return (initialQuery && initialQuery.q) || ""; });
+  const [linesOn, setLinesOn] = useState(function() { return Boolean(initialQuery && initialQuery.lines === "1"); });
+
+  useEffect(function() {
+    replaceQuery("web", { q: query.trim(), lines: linesOn ? "1" : "" });
+  }, [query, linesOn]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -200,9 +204,29 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
     if (matches.length === 1) navigate({ name: "figure", figure: matches[0].key });
   }
 
+  // When lines are on AND a node is focused/hovered, dim all nodes that
+  // aren't the focused one or named in its `out` list ("focus highlight").
+  const focusedKey = (function() {
+    if (!linesOn || !tip) return null;
+    const n = nodes.find(function(x) { return x.name === tip; });
+    return n && n.hasData ? n.key : null;
+  })();
+  const inFocusSet = (function() {
+    if (!focusedKey) return null;
+    const set = new Set([focusedKey]);
+    const fig = DATA[focusedKey];
+    if (fig && fig.out) {
+      fig.out.forEach(function(item) {
+        if (DATA[item[0]]) set.add(item[0]);
+      });
+    }
+    return set;
+  })();
+
   function nodeOpacity(n) {
-    if (!q) return 1;
-    return isMatch(n) ? 1 : 0.18;
+    if (q) return isMatch(n) ? 1 : 0.18;
+    if (inFocusSet && n.key && !inFocusSet.has(n.key)) return 0.22;
+    return 1;
   }
 
   return (

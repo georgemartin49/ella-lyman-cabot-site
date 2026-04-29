@@ -10,6 +10,7 @@ import {
 import { hrefFor, navigate } from "../router";
 import ThemeToggle from "./ThemeToggle";
 import Footer from "./Footer";
+import { recordView } from "../hooks/useRecentlyViewed";
 
 // Find the prev/next figure (with data) in the same ring as `name`.
 function findSiblings(name) {
@@ -44,12 +45,26 @@ export default function DetailView({ name, theme, onToggleTheme }) {
     return function() { window.removeEventListener("keydown", onKey); };
   }, []);
 
+  useEffect(function() { if (DATA[name]) recordView(name); }, [name]);
+
   function copyLink() {
     if (typeof window === "undefined" || !navigator.clipboard) return;
     navigator.clipboard.writeText(window.location.href).then(function() {
       setCopied(true);
       setTimeout(function() { setCopied(false); }, 1600);
     });
+  }
+
+  // Web Share API on supporting platforms (mobile Safari, Android Chrome,
+  // recent desktop browsers). Falls back to copy-link silently elsewhere.
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  function shareLink() {
+    if (!canShare) { copyLink(); return; }
+    navigator.share({
+      title: name + " · Ella Lyman Cabot",
+      text: fig ? (fig.title + " — " + fig.dates) : name,
+      url: window.location.href,
+    }).catch(function() { /* user cancelled */ });
   }
 
   if (!fig) {
@@ -85,14 +100,26 @@ export default function DetailView({ name, theme, onToggleTheme }) {
             className="elc-btn">
             ← Back
           </a>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <button type="button" className="elc-btn" aria-live="polite" onClick={copyLink}>
               {copied ? "✓ Copied" : "Copy link"}
             </button>
+            {canShare && (
+              <button type="button" className="elc-btn" onClick={shareLink}>
+                Share
+              </button>
+            )}
             {isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}
           </div>
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
+          <nav aria-label="Breadcrumb" style={{ marginBottom: "4px", fontSize: "13px", color: MUTED, lineHeight: 1.4 }}>
+            <a href={hrefFor({ name: "landing" })} style={{ color: MUTED, textDecoration: "none", borderBottom: "1px dotted currentColor" }}>Home</a>
+            <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
+            <a href={hrefFor({ name: "web" })} style={{ color: MUTED, textDecoration: "none", borderBottom: "1px dotted currentColor" }}>Web</a>
+            <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
+            <span style={{ color: ringColor }}>{ringLabel}</span>
+          </nav>
           <h2 style={{
             color: ACCENT,
             fontSize: isMobile ? "28px" : "34px",
@@ -102,7 +129,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
             lineHeight: 1.15
           }}>{name}</h2>
           <p style={{ color: TX_SOFT, fontSize: "15px", margin: "4px 0 0", lineHeight: 1.4, fontStyle: "italic" }}>
-            {ringLabel} · {fig.dates} · <span style={{ color: ringColor }}>{fig.title}</span>
+            {fig.dates} · <span style={{ color: ringColor }}>{fig.title}</span>
           </p>
         </div>
         {!isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}

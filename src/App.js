@@ -18,7 +18,7 @@ export default function App() {
     else document.title = base;
   }, [route]);
 
-  if (route.name === "web") return <PhilosophicalWeb theme={theme} onToggleTheme={toggleTheme} />;
+  if (route.name === "web") return <PhilosophicalWeb theme={theme} onToggleTheme={toggleTheme} initialQuery={route.query} />;
   if (route.name === "timeline") return <Timeline theme={theme} onToggleTheme={toggleTheme} />;
   if (route.name === "figure") return <DetailView name={route.figure} theme={theme} onToggleTheme={toggleTheme} />;
   return <Landing theme={theme} onToggleTheme={toggleTheme} />;

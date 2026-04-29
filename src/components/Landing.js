@@ -1,11 +1,14 @@
 import useIsMobile from "../hooks/useIsMobile";
 import {
   BG, SURF, BORD, RULE, ACCENT, ACCENT_SOFT,
-  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER
+  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER,
+  RING_COLORS, OUTER_COLOR
 } from "../theme";
 import { hrefFor } from "../router";
 import ThemeToggle from "./ThemeToggle";
 import Footer from "./Footer";
+import useRecentlyViewed from "../hooks/useRecentlyViewed";
+import { DATA } from "../data/figures";
 
 const sharedStyles = `
   .lp-link {
@@ -24,6 +27,7 @@ const COL = "720px";
 
 export default function Landing({ theme, onToggleTheme }) {
   const isMobile = useIsMobile();
+  const recent = useRecentlyViewed().filter(function(k) { return DATA[k]; });
 
   return (
     <div style={{ background: BG, minHeight: "100vh", color: TX }}>
@@ -120,6 +124,40 @@ export default function Landing({ theme, onToggleTheme }) {
             A full biographical essay is in preparation and will appear here.
           </p>
         </section>
+
+        {recent.length > 0 && (
+          <section aria-labelledby="recent" style={{
+            background: SURF,
+            borderRadius: "6px",
+            border: "1px solid " + BORD,
+            padding: "20px 22px"
+          }}>
+            <h2 id="recent" className="elc-eyebrow">Continue exploring</h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {recent.map(function(key) {
+                const f = DATA[key];
+                const c = f.ring === 5 ? OUTER_COLOR : (RING_COLORS[f.ring - 1] || RING_COLORS[0]);
+                return (
+                  <a key={key}
+                    className="lp-link"
+                    href={hrefFor({ name: "figure", figure: key })}
+                    style={{
+                      display: "inline-block",
+                      background: BG,
+                      border: "1px solid " + BORD,
+                      borderRadius: "4px",
+                      padding: "6px 12px",
+                      color: TX,
+                      fontSize: "16px"
+                    }}>
+                    <span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: c, marginRight: "8px", verticalAlign: "middle" }} />
+                    {key}
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <nav aria-label="Site sections" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <h2 className="elc-eyebrow">Explore</h2>
