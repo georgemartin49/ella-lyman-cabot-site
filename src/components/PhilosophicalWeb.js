@@ -218,6 +218,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   const [genderF, setGenderF] = useState(function() { return parseGender(initialQuery && initialQuery.g); });
   const [knownF, setKnownF] = useState(function() { return parseTri(initialQuery && initialQuery.k); });
   const [archF, setArchF] = useState(function() { return parseTri(initialQuery && initialQuery.a); });
+  const [regionF, setRegionF] = useState(function() { return (initialQuery && initialQuery.r) || "all"; });
 
   useEffect(function() {
     replaceQuery("web", {
@@ -227,8 +228,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
       g: genderF === "all" ? "" : genderF,
       k: knownF === "all" ? "" : knownF,
       a: archF === "all" ? "" : archF,
+      r: regionF === "all" ? "" : regionF,
     });
-  }, [query, linesMode, enabledRings, genderF, knownF, archF]);
+  }, [query, linesMode, enabledRings, genderF, knownF, archF, regionF]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -293,16 +295,17 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   })();
 
   function passesPeopleFilters(n) {
-    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all";
+    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all" && regionF === "all";
     const fig = DATA[n.key];
     if (genderF !== "all" && fig.gender !== genderF) return false;
     if (knownF === "yes" && !fig.wellKnown) return false;
     if (knownF === "no"  &&  fig.wellKnown) return false;
     if (archF === "yes" && !fig.hasArchive) return false;
     if (archF === "no"  &&  fig.hasArchive) return false;
+    if (regionF !== "all" && fig.region !== regionF) return false;
     return true;
   }
-  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all";
+  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all" || regionF !== "all";
   const visibleCount = peopleFiltersActive
     ? nodes.filter(function(n) { return n.hasData && passesPeopleFilters(n); }).length
     : nodes.filter(function(n) { return n.hasData; }).length;
@@ -453,7 +456,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
           {peopleFiltersActive && (
             <button type="button" className="elc-btn"
               style={{ fontSize: "13px", padding: "5px 10px" }}
-              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); }}>
+              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); setRegionF("all"); }}>
               Reset
             </button>
           )}
@@ -469,6 +472,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             { label: "Gender",  value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
             { label: "Known",   value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
             { label: "Archive", value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
+            { label: "Region",  value: regionF, set: setRegionF, opts: [["all","All"],["American-NE","Am · NE"],["American-Other","Am · Other"],["British","British"],["French","French"],["German","German"],["Greek","Greek"],["Other","Other"]] },
           ].map(function(group, gi) {
             return (
               <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
