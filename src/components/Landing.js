@@ -1,80 +1,126 @@
 import useIsMobile from "../hooks/useIsMobile";
-import { BG, SURF, BORD, GOLD, MUTED, TX, WARN } from "../theme";
+import {
+  BG, SURF, BORD, RULE, ACCENT, ACCENT_SOFT,
+  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER
+} from "../theme";
 import { hrefFor } from "../router";
+import ThemeToggle from "./ThemeToggle";
 
 const sharedStyles = `
   .lp-link {
     text-decoration: none;
-    transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
+    transition: background 200ms ease, border-color 200ms ease;
   }
   .lp-link:hover, .lp-link:focus-visible {
-    background: rgba(212,168,64,0.10);
-    border-color: ${GOLD};
+    background: var(--accent-faint);
+    border-color: ${ACCENT};
     outline: none;
   }
-  .lp-link:focus-visible {
-    box-shadow: 0 0 0 2px rgba(212,168,64,0.5);
-  }
+  .lp-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
   .lp-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-  .lp-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: ${GOLD}; color: ${BG}; border-radius: 6px; font-weight: bold; z-index: 100; }
+  .lp-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: ${ACCENT}; color: ${BG}; border-radius: 4px; font-weight: bold; z-index: 100; }
 `;
 
 function SectionHeading({ children }) {
   return (
     <h2 style={{
-      color: MUTED,
+      color: ACCENT,
       fontSize: "13px",
+      letterSpacing: "0.18em",
       textTransform: "uppercase",
-      letterSpacing: "0.12em",
-      margin: "0 0 12px",
-      fontWeight: "bold"
+      margin: "0 0 14px",
+      fontWeight: 600,
+      fontFamily: "'Cormorant Garamond', Georgia, serif"
     }}>{children}</h2>
   );
 }
 
-export default function Landing() {
+export default function Landing({ theme, onToggleTheme }) {
   const isMobile = useIsMobile();
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", fontFamily: "Georgia, serif", color: TX }}>
+    <div style={{ background: BG, minHeight: "100vh", color: TX }}>
       <style>{sharedStyles}</style>
       <a href="#landing-main" className="lp-skip">Skip to content</a>
 
+      <div style={{
+        maxWidth: "780px",
+        margin: "0 auto",
+        padding: isMobile ? "16px 16px 0" : "20px 24px 0",
+        display: "flex",
+        justifyContent: "flex-end"
+      }}>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+      </div>
+
       <main id="landing-main" style={{
-        padding: isMobile ? "32px 16px" : "56px 24px",
+        padding: isMobile ? "24px 16px 64px" : "40px 24px 96px",
         maxWidth: "780px",
         margin: "0 auto",
         width: "100%",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        gap: "28px"
+        gap: "32px"
       }}>
 
         <header style={{ textAlign: "center" }}>
-          <p style={{ color: GOLD, fontSize: "13px", letterSpacing: "0.18em", textTransform: "uppercase", margin: "0 0 10px", fontWeight: "bold" }}>
+          <p style={{
+            color: ACCENT,
+            fontSize: "13px",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            margin: "0 0 14px",
+            fontWeight: 600
+          }}>
             1866 — 1934
           </p>
           <h1 style={{
-            color: "#E8D5A0",
-            fontSize: isMobile ? "36px" : "48px",
-            fontWeight: "bold",
+            color: ACCENT,
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: isMobile ? "44px" : "60px",
+            fontWeight: 600,
             margin: 0,
-            letterSpacing: "0.02em",
-            lineHeight: 1.15
+            letterSpacing: "0.005em",
+            lineHeight: 1.05
           }}>
             Ella Lyman Cabot
           </h1>
-          <p style={{ color: MUTED, fontSize: isMobile ? "16px" : "18px", margin: "10px 0 0", fontStyle: "italic" }}>
+          <p style={{
+            color: TX_SOFT,
+            fontStyle: "italic",
+            fontSize: isMobile ? "18px" : "20px",
+            margin: "16px 0 0",
+            lineHeight: 1.4
+          }}>
             Interest, the Achieved Self, and the Conditions of Selfhood
           </p>
         </header>
 
-        <section aria-labelledby="about-site" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-          <h2 id="about-site" style={{ color: MUTED, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 12px", fontWeight: "bold" }}>
-            About this site
-          </h2>
-          <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>
+        <div aria-hidden="true" style={{
+          textAlign: "center",
+          color: ACCENT_SOFT,
+          fontSize: "22px",
+          letterSpacing: "0.4em",
+          margin: "8px 0"
+        }}>· · ·</div>
+
+        <section aria-labelledby="about-site" style={{
+          background: SURF,
+          borderRadius: "6px",
+          border: "1px solid " + BORD,
+          padding: "22px 24px"
+        }}>
+          <h2 id="about-site" style={{
+            color: ACCENT,
+            fontSize: "13px",
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            margin: "0 0 14px",
+            fontWeight: 600,
+            fontFamily: "'Cormorant Garamond', Georgia, serif"
+          }}>About this site</h2>
+          <p style={{ color: TX, fontSize: "19px", lineHeight: 1.7, margin: 0 }}>
             This is the working site for the recovery of Ella Lyman Cabot's philosophical project.
             At present it hosts <strong>The Philosophical Web</strong> — an interactive map of the
             thinkers who shaped her work and the figures across other traditions whose own accounts
@@ -85,9 +131,14 @@ export default function Landing() {
           </p>
         </section>
 
-        <section aria-labelledby="bio" style={{ background: SURF, borderRadius: "10px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+        <section aria-labelledby="bio" style={{
+          background: SURF,
+          borderRadius: "6px",
+          border: "1px solid " + BORD,
+          padding: "22px 24px"
+        }}>
           <SectionHeading>Biography</SectionHeading>
-          <p style={{ color: MUTED, fontSize: "17px", lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
+          <p style={{ color: TX_SOFT, fontSize: "18px", lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
             A full biographical essay is in preparation and will appear here.
           </p>
         </section>
@@ -102,14 +153,21 @@ export default function Landing() {
               display: "block",
               background: SURF,
               border: "1px solid " + BORD,
-              borderRadius: "10px",
-              padding: "20px 22px",
+              borderRadius: "6px",
+              padding: "22px 24px",
               color: TX
             }}>
-            <span style={{ display: "block", color: GOLD, fontSize: "20px", fontWeight: "bold", marginBottom: "6px" }}>
+            <span style={{
+              display: "block",
+              color: ACCENT,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "24px",
+              fontWeight: 600,
+              marginBottom: "6px"
+            }}>
               The Philosophical Web →
             </span>
-            <span style={{ display: "block", color: MUTED, fontSize: "16px", lineHeight: 1.55 }}>
+            <span style={{ display: "block", color: TX_SOFT, fontSize: "17px", lineHeight: 1.55 }}>
               An interactive map of the figures connected to ELC, organised in concentric rings
               from closest allies to thinkers across other traditions who arrived at convergent
               positions.
@@ -120,17 +178,23 @@ export default function Landing() {
             aria-disabled="true"
             style={{
               display: "block",
-              background: "rgba(15,17,32,0.5)",
-              border: "1px dashed " + BORD,
-              borderRadius: "10px",
+              background: "transparent",
+              border: "1px dashed " + RULE,
+              borderRadius: "6px",
               padding: "20px 22px",
-              color: MUTED,
-              opacity: 0.75
+              opacity: 0.78
             }}>
-            <span style={{ display: "block", color: "#A0A8BE", fontSize: "18px", fontWeight: "bold", marginBottom: "6px" }}>
+            <span style={{
+              display: "block",
+              color: TX_SOFT,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "4px"
+            }}>
               The Five Conditions
             </span>
-            <span style={{ display: "block", fontSize: "15px", lineHeight: 1.55, fontStyle: "italic" }}>
+            <span style={{ display: "block", fontSize: "15px", lineHeight: 1.55, fontStyle: "italic", color: MUTED }}>
               Coming soon — an essay on ELC's account of what genuine selfhood requires.
             </span>
           </div>
@@ -139,17 +203,23 @@ export default function Landing() {
             aria-disabled="true"
             style={{
               display: "block",
-              background: "rgba(15,17,32,0.5)",
-              border: "1px dashed " + BORD,
-              borderRadius: "10px",
+              background: "transparent",
+              border: "1px dashed " + RULE,
+              borderRadius: "6px",
               padding: "20px 22px",
-              color: MUTED,
-              opacity: 0.75
+              opacity: 0.78
             }}>
-            <span style={{ display: "block", color: "#A0A8BE", fontSize: "18px", fontWeight: "bold", marginBottom: "6px" }}>
+            <span style={{
+              display: "block",
+              color: TX_SOFT,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: "20px",
+              fontWeight: 600,
+              marginBottom: "4px"
+            }}>
               Selected Writings &amp; Poems
             </span>
-            <span style={{ display: "block", fontSize: "15px", lineHeight: 1.55, fontStyle: "italic" }}>
+            <span style={{ display: "block", fontSize: "15px", lineHeight: 1.55, fontStyle: "italic", color: MUTED }}>
               Coming soon — primary texts from ELC's prose and poetry.
             </span>
           </div>
@@ -159,13 +229,13 @@ export default function Landing() {
           display: "flex",
           alignItems: "flex-start",
           gap: "10px",
-          background: "rgba(192,120,64,0.08)",
-          border: "1px solid rgba(192,120,64,0.25)",
-          borderRadius: "8px",
+          background: WARN_BG,
+          border: "1px solid " + WARN_BORDER,
+          borderRadius: "6px",
           padding: "12px 16px"
         }}>
           <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
-          <p style={{ color: "#9E8E78", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+          <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
             <strong style={{ color: WARN }}>Still being updated.</strong> Some entries contain
             working hypotheses or inferences pending archival verification; these are flagged
             individually inside the Web.

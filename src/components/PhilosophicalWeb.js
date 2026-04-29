@@ -3,10 +3,12 @@ import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, CX, CY } from "../data/rings";
 import {
-  BG, SURF, BORD, GOLD, MUTED, TX, WARN,
+  BG, SURF, BORD, ACCENT,
+  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER, GOLD, GOLD_TEXT,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
 import { hrefFor, navigate } from "../router";
+import ThemeToggle from "./ThemeToggle";
 
 const pwStyles = `
   .pw-node { transition: transform 200ms ease, opacity 200ms ease; }
@@ -16,39 +18,39 @@ const pwStyles = `
   .pw-node-active:hover { transform: translateZ(0); }
   .pw-node-active:focus-visible { outline: none; }
   .pw-node-active:focus-visible .pw-dot {
-    stroke: #FFF8E8; stroke-width: 1.5; stroke-opacity: 0.9;
+    stroke: var(--accent); stroke-width: 1.5; stroke-opacity: 0.9;
   }
   .pw-edge { transition: stroke-opacity 200ms ease, stroke-width 200ms ease; }
   .pw-back, .pw-toggle {
-    transition: background 200ms ease, border-color 200ms ease;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
   }
   .pw-back:hover, .pw-back:focus-visible,
   .pw-toggle:hover, .pw-toggle:focus-visible {
-    background: rgba(255,255,255,0.06);
-    border-color: #3A4060;
+    border-color: var(--accent);
+    color: var(--accent);
     outline: none;
   }
   .pw-back:focus-visible, .pw-toggle:focus-visible,
-  .pw-search:focus-visible { box-shadow: 0 0 0 2px rgba(212,168,64,0.5); }
+  .pw-search:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
   .pw-toggle[aria-pressed="true"] {
-    background: rgba(212,168,64,0.12);
-    border-color: ${GOLD};
-    color: ${GOLD};
+    background: var(--accent-faint);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .pw-search {
-    background: ${SURF};
-    color: ${TX};
-    border: 1px solid ${BORD};
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-family: Georgia, serif;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-family: 'EB Garamond', Georgia, serif;
     font-size: 16px;
     outline: none;
     transition: border-color 200ms ease;
   }
-  .pw-search:focus-visible { border-color: ${GOLD}; }
+  .pw-search:focus-visible { border-color: var(--accent); }
   .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-  .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: ${GOLD}; color: ${BG}; border-radius: 6px; font-weight: bold; z-index: 100; }
+  .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: var(--accent); color: var(--bg); border-radius: 4px; font-weight: bold; z-index: 100; }
   @media (prefers-reduced-motion: reduce) {
     .pw-node, .pw-node .pw-dot, .pw-node .pw-ring, .pw-node text, .pw-edge { transition: none !important; }
   }
@@ -78,7 +80,6 @@ function findKey(shortName) {
   });
 }
 
-// Build a flat list of all rendered nodes with their resolved positions and metadata.
 function buildNodes() {
   const out = [];
   RINGS_CFG.forEach(function(ring, ri) {
@@ -110,9 +111,6 @@ function buildNodes() {
   return out;
 }
 
-// Edges go from each figure to the figures listed in its `out` array
-// (lineage flow toward ELC). Targets that aren't rendered nodes are skipped,
-// except "ELC" which terminates at the center.
 function buildEdges(nodes) {
   const byTarget = new Map();
   nodes.forEach(function(n) { if (n.key) byTarget.set(n.key, n); });
@@ -135,7 +133,7 @@ function buildEdges(nodes) {
   return edges;
 }
 
-export default function PhilosophicalWeb() {
+export default function PhilosophicalWeb({ theme, onToggleTheme }) {
   const [tip, setTip] = useState(null);
   const [query, setQuery] = useState("");
   const [linesOn, setLinesOn] = useState(false);
@@ -173,29 +171,40 @@ export default function PhilosophicalWeb() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "20px 14px" : "32px 20px", fontFamily: "Georgia, serif", color: TX }}>
+    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "20px 14px" : "32px 20px", color: TX }}>
       <style>{pwStyles}</style>
 
-      <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "flex-start", marginBottom: "8px" }}>
+      <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
         <a href={hrefFor({ name: "landing" })} className="pw-back" style={{
           background: "transparent",
           border: "1px solid " + BORD,
           color: TX,
           padding: "8px 14px",
-          borderRadius: "6px",
+          borderRadius: "4px",
           fontSize: "15px",
           textDecoration: "none",
-          display: "inline-block"
+          display: "inline-block",
+          fontFamily: "'EB Garamond', Georgia, serif"
         }}>← Home</a>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
-      <h1 style={{ color: "#E8D5A0", fontSize: isMobile ? "30px" : "38px", fontWeight: "bold", margin: "0 0 6px", letterSpacing: "0.04em", textAlign: "center", lineHeight: 1.15 }}>
+      <h1 style={{
+        color: ACCENT,
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
+        fontSize: isMobile ? "34px" : "44px",
+        fontWeight: 600,
+        margin: "0 0 8px",
+        letterSpacing: "0.005em",
+        textAlign: "center",
+        lineHeight: 1.1
+      }}>
         The Philosophical Web
       </h1>
-      <p style={{ color: MUTED, fontSize: isMobile ? "16px" : "19px", margin: "0 0 6px", textAlign: "center", maxWidth: "720px", lineHeight: 1.4 }}>
+      <p style={{ color: TX_SOFT, fontSize: isMobile ? "17px" : "19px", margin: "0 0 6px", textAlign: "center", maxWidth: "720px", lineHeight: 1.45, fontStyle: "italic" }}>
         Ella Lyman Cabot · Interest, the Achieved Self, and the Conditions of Selfhood
       </p>
-      <p style={{ color: "#6A7090", fontSize: "15px", fontStyle: "italic", margin: "0 0 14px", textAlign: "center" }}>
+      <p style={{ color: MUTED, fontSize: "14px", fontStyle: "italic", margin: "0 0 18px", textAlign: "center" }}>
         Working document — still being updated · Tap any node to explore lineages
       </p>
 
@@ -227,10 +236,10 @@ export default function PhilosophicalWeb() {
             background: "transparent",
             border: "1px solid " + BORD,
             color: TX,
-            padding: "8px 14px",
-            borderRadius: "6px",
+            padding: "9px 14px",
+            borderRadius: "4px",
             fontSize: "15px",
-            fontFamily: "Georgia, serif",
+            fontFamily: "'EB Garamond', Georgia, serif",
             cursor: "pointer"
           }}>
           {linesOn ? "Hide Lines" : "Show Lines"}
@@ -239,14 +248,14 @@ export default function PhilosophicalWeb() {
 
       <div role="status" aria-live="polite" style={{ minHeight: "28px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "6px", maxWidth: "640px", textAlign: "center", padding: "0 12px" }}>
         {q && (
-          <span style={{ color: MUTED, fontSize: "14px" }}>
+          <span style={{ color: MUTED, fontSize: "14px", fontStyle: "italic" }}>
             {matchCount === 0 ? "No figures match" :
              matchCount === 1 ? "1 match — press Enter to open" :
              matchCount + " matches"}
           </span>
         )}
         {!q && tip && (
-          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "6px", padding: "6px 16px", color: "#D2D8EA", fontSize: "16px" }}>
+          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "4px", padding: "6px 16px", color: TX, fontSize: "16px" }}>
             {tip}
           </div>
         )}
@@ -263,19 +272,19 @@ export default function PhilosophicalWeb() {
                 x1={CX} y1={CY}
                 x2={CX + 490 * Math.sin(rad)}
                 y2={CY - 490 * Math.cos(rad)}
-                stroke="#ffffff" strokeWidth="0.4" strokeOpacity="0.04" />
+                stroke="var(--rule)" strokeWidth="0.4" strokeOpacity="0.35" />
             );
           })}
 
           {RINGS_CFG.map(function(ring, ri) {
             return (
               <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
-                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.8" strokeOpacity="0.20" />
+                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.8" strokeOpacity="0.32" />
             );
           })}
 
           <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
-            fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.30"
+            fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.42"
             strokeDasharray="9 5" />
 
           {linesOn && (
@@ -289,16 +298,16 @@ export default function PhilosophicalWeb() {
                     x2={e.to.x} y2={e.to.y}
                     stroke={e.color}
                     strokeWidth={isActive ? 1.6 : 0.7}
-                    strokeOpacity={isActive ? 0.7 : 0.18} />
+                    strokeOpacity={isActive ? 0.7 : 0.22} />
                 );
               })}
             </g>
           )}
 
-          <circle cx={CX} cy={CY} r="60" fill={GOLD} opacity="0.10" />
+          <circle cx={CX} cy={CY} r="60" fill={GOLD} opacity="0.14" />
           <circle cx={CX} cy={CY} r="48" fill={GOLD} opacity="0.95" />
-          <text x={CX} y={CY + 4} textAnchor="middle" fill="#FFF8E8" fontSize="26" fontWeight="bold" letterSpacing="2">ELC</text>
-          <text x={CX} y={CY + 28} textAnchor="middle" fill="#FFF8E8" fontSize="13" opacity="0.85" letterSpacing="1">1866–1934</text>
+          <text x={CX} y={CY + 4} textAnchor="middle" fill={GOLD_TEXT} fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="28" fontWeight="600" letterSpacing="2">ELC</text>
+          <text x={CX} y={CY + 28} textAnchor="middle" fill={GOLD_TEXT} fontSize="13" opacity="0.85" letterSpacing="1">1866–1934</text>
 
           {nodes.map(function(n, i) {
             const isHov = tip === n.name;
@@ -307,8 +316,8 @@ export default function PhilosophicalWeb() {
             const dotR = n.isOuter ? (isHov ? 7 : 5) : (isHov ? 9 : 6);
             const dotFill = n.isOuter ? (isHov ? OUTER_COLOR : "#7E6EAA") : n.color;
             const labelColor = n.isOuter
-              ? (isHov ? OUTER_COLOR : "#A89FC8")
-              : (isHov ? n.color : "#C2CADD");
+              ? (isHov ? OUTER_COLOR : TX_SOFT)
+              : (isHov ? n.color : TX);
             const fontSize = n.isOuter ? 16 : 18;
             return (
               <g key={i}
@@ -327,20 +336,21 @@ export default function PhilosophicalWeb() {
                   <circle cx={n.x} cy={n.y} r={ringR}
                     fill="none" stroke={n.isOuter ? OUTER_COLOR : n.color}
                     strokeWidth={isHov ? 1.4 : 1.0}
-                    strokeOpacity={isHov ? 0.8 : 0.5}
+                    strokeOpacity={isHov ? 0.85 : 0.55}
                     className="pw-ring" />
                 )}
                 <circle cx={n.x} cy={n.y}
                   r={dotR}
                   fill={dotFill}
-                  opacity={isHov ? 1 : (n.isOuter ? 0.92 : 0.75)}
+                  opacity={isHov ? 1 : (n.isOuter ? 0.92 : 0.85)}
                   className="pw-dot" />
                 <text
                   x={textX(n.x)} y={n.y + 6}
                   textAnchor={textAnchor(n.x)}
                   fill={labelColor}
+                  fontFamily="'EB Garamond', Georgia, serif"
                   fontSize={fontSize}
-                  fontWeight={isHov && !n.isOuter ? "bold" : "normal"}>
+                  fontWeight={isHov && !n.isOuter ? "600" : "400"}>
                   {n.name}
                 </text>
               </g>
@@ -361,15 +371,15 @@ export default function PhilosophicalWeb() {
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
-              <span style={{ color: "#A0A8BE", fontSize: "15px" }}>{item.label}</span>
+              <span style={{ color: TX_SOFT, fontSize: "15px" }}>{item.label}</span>
             </div>
           );
         })}
       </div>
 
-      <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: "rgba(192,120,64,0.08)", border: "1px solid rgba(192,120,64,0.25)", borderRadius: "8px", padding: "12px 16px", boxSizing: "border-box" }}>
+      <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
         <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
-        <p style={{ color: "#9E8E78", fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
+        <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
           <strong style={{ color: WARN }}>Still Being Updated.</strong> Entries marked ⚠ in detail view contain claims that are working hypotheses or inferences pending archival verification. All other entries draw from established scholarship and primary sources.
         </p>
       </aside>
