@@ -1,17 +1,17 @@
 /* Light theme — Warm Paper (default) */
 :root {
-  --bg: #EDE2C8;
-  --bg-deep: #E5D7B5;
-  --surface: #F4EBD3;
-  --border: #B59E78;
-  --rule: #C9B58D;
+  --bg: #F5ECCF;
+  --bg-deep: #ECDFB6;
+  --surface: #FAF3D8;
+  --border: #C9B58D;
+  --rule: #B59E78;
   --text: #3B2E22;
   --text-soft: #6B5A47;
   --text-muted: #8A7A65;
   --accent: #8B0E1A;
   --accent-soft: #B23A3A;
   --accent-faint: rgba(139, 14, 26, 0.08);
-  --accent-faint-strong: rgba(139, 14, 26, 0.12);
+  --accent-faint-strong: rgba(139, 14, 26, 0.14);
   --warn: #8B5A18;
   --warn-bg: rgba(139, 90, 24, 0.10);
   --warn-border: rgba(139, 90, 24, 0.32);
@@ -58,4 +58,35 @@ h1, h2, h3, h4 {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Reusable chrome button — works for back/home links and toggle buttons.
+   Defined here so :hover / [aria-pressed] selectors can win against any
+   inline style overrides that might leak in. */
+.elc-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.elc-btn:hover, .elc-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+.elc-btn:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+.elc-btn[aria-pressed="true"] {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+  color: var(--accent);
 }

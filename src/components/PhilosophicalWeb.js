@@ -21,22 +21,7 @@ const pwStyles = `
     stroke: var(--accent); stroke-width: 1.5; stroke-opacity: 0.9;
   }
   .pw-edge { transition: stroke-opacity 200ms ease, stroke-width 200ms ease; }
-  .pw-back, .pw-toggle {
-    transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
-  }
-  .pw-back:hover, .pw-back:focus-visible,
-  .pw-toggle:hover, .pw-toggle:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-    outline: none;
-  }
-  .pw-back:focus-visible, .pw-toggle:focus-visible,
-  .pw-search:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
-  .pw-toggle[aria-pressed="true"] {
-    background: var(--accent-faint);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+
   .pw-search {
     background: var(--surface);
     color: var(--text);
@@ -46,11 +31,13 @@ const pwStyles = `
     font-family: 'EB Garamond', Georgia, serif;
     font-size: 16px;
     outline: none;
-    transition: border-color 200ms ease;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
   }
-  .pw-search:focus-visible { border-color: var(--accent); }
+  .pw-search:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+
   .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
   .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: var(--accent); color: var(--bg); border-radius: 4px; font-weight: bold; z-index: 100; }
+
   @media (prefers-reduced-motion: reduce) {
     .pw-node, .pw-node .pw-dot, .pw-node .pw-ring, .pw-node text, .pw-edge { transition: none !important; }
   }
@@ -175,17 +162,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
       <style>{pwStyles}</style>
 
       <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-        <a href={hrefFor({ name: "landing" })} className="pw-back" style={{
-          background: "transparent",
-          border: "1px solid " + BORD,
-          color: TX,
-          padding: "8px 14px",
-          borderRadius: "4px",
-          fontSize: "15px",
-          textDecoration: "none",
-          display: "inline-block",
-          fontFamily: "'EB Garamond', Georgia, serif"
-        }}>← Home</a>
+        <a href={hrefFor({ name: "landing" })} className="elc-btn">← Home</a>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
@@ -229,19 +206,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
         />
         <button
           type="button"
-          className="pw-toggle"
+          className="elc-btn"
           aria-pressed={linesOn}
-          onClick={function() { setLinesOn(function(v) { return !v; }); }}
-          style={{
-            background: "transparent",
-            border: "1px solid " + BORD,
-            color: TX,
-            padding: "9px 14px",
-            borderRadius: "4px",
-            fontSize: "15px",
-            fontFamily: "'EB Garamond', Georgia, serif",
-            cursor: "pointer"
-          }}>
+          onClick={function() { setLinesOn(function(v) { return !v; }); }}>
           {linesOn ? "Hide Lines" : "Show Lines"}
         </button>
       </form>
@@ -279,13 +246,13 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
           {RINGS_CFG.map(function(ring, ri) {
             return (
               <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
-                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.8" strokeOpacity="0.32" />
+                fill="none" stroke={RING_COLORS[ri]} strokeWidth="2.2" strokeOpacity="0.55" />
             );
           })}
 
           <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
-            fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.42"
-            strokeDasharray="9 5" />
+            fill="none" stroke={OUTER_COLOR} strokeWidth="2.4" strokeOpacity="0.65"
+            strokeDasharray="10 6" />
 
           {linesOn && (
             <g aria-hidden="true">

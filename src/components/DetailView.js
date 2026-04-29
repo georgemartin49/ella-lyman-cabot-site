@@ -10,13 +10,6 @@ import { hrefFor, navigate } from "../router";
 import ThemeToggle from "./ThemeToggle";
 
 const detailStyles = `
-  .pw-back { transition: background 200ms ease, border-color 200ms ease, color 200ms ease; }
-  .pw-back:hover, .pw-back:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-    outline: none;
-  }
-  .pw-back:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
   .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
   .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: var(--accent); color: var(--bg); border-radius: 4px; font-weight: bold; z-index: 100; }
   .pw-figure-link { color: inherit; text-decoration: none; transition: opacity 200ms ease; }
@@ -24,7 +17,6 @@ const detailStyles = `
 `;
 
 const headingFont = "'Cormorant Garamond', Georgia, serif";
-const bodyFont = "'EB Garamond', Georgia, serif";
 
 export default function DetailView({ name, theme, onToggleTheme }) {
   const fig = DATA[name];
@@ -43,17 +35,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
         <p style={{ color: TX_SOFT, fontSize: "18px", marginBottom: "20px" }}>
           No entry found for <strong style={{ color: TX }}>{name}</strong>.
         </p>
-        <a href={hrefFor({ name: "web" })} className="pw-back" style={{
-          display: "inline-block",
-          background: "transparent",
-          border: "1px solid " + BORD,
-          color: TX,
-          padding: "10px 18px",
-          borderRadius: "4px",
-          fontSize: "16px",
-          textDecoration: "none",
-          fontFamily: bodyFont
-        }}>← Back to the Web</a>
+        <a href={hrefFor({ name: "web" })} className="elc-btn">← Back to the Web</a>
       </div>
     );
   }
@@ -76,21 +58,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
           <a
             href={hrefFor({ name: "web" })}
             aria-label="Back to philosophical web"
-            className="pw-back"
-            style={{
-              background: "transparent",
-              border: "1px solid " + BORD,
-              color: TX,
-              padding: "9px 16px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontFamily: bodyFont,
-              lineHeight: 1.2,
-              flexShrink: 0,
-              textDecoration: "none",
-              display: "inline-block"
-            }}>
+            className="elc-btn">
             ← Back
           </a>
           {isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}
