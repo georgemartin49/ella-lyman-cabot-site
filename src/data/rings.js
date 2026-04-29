@@ -4,7 +4,7 @@ const RINGS_CFG = [
   { rad:108, cr:102, label:"Ring I — Closest Allies",
     nodes:["Emerson","James","Weil","P-Pattison","Royce","Palmer"] },
   { rad:196, cr:188, label:"Ring II — Substantial Agreement",
-    nodes:["Murdoch","T.H. Green","Du Bois","Caird","Bosanquet","Korsgaard","Follett","Bergson","Buchler","Calkins","Bowne","Ritchie","Aristotle","Langer"] },
+    nodes:["Murdoch","T.H. Green","Du Bois","Caird","Bosanquet","Korsgaard","Follett","Bergson","Alain","Buchler","Calkins","Bowne","Ritchie","Aristotle","Langer"] },
   { rad:284, cr:276, label:"Ring III — Partial Agreement",
     nodes:["Hegel","Sartre","Dewey","Kant","Peirce","Bradley"] },
   { rad:368, cr:360, label:"Ring IV — Objectors",
