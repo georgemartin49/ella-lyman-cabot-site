@@ -1,13 +1,61 @@
-body {
+/* Light theme — Warm Paper (default) */
+:root {
+  --bg: #EDE2C8;
+  --bg-deep: #E5D7B5;
+  --surface: #F4EBD3;
+  --border: #B59E78;
+  --rule: #C9B58D;
+  --text: #3B2E22;
+  --text-soft: #6B5A47;
+  --text-muted: #8A7A65;
+  --accent: #8B0E1A;
+  --accent-soft: #B23A3A;
+  --accent-faint: rgba(139, 14, 26, 0.08);
+  --accent-faint-strong: rgba(139, 14, 26, 0.12);
+  --warn: #8B5A18;
+  --warn-bg: rgba(139, 90, 24, 0.10);
+  --warn-border: rgba(139, 90, 24, 0.32);
+  --gold: #B8893A;
+  --gold-text: #2A1F0F;
+}
+
+/* Dark theme — Library */
+[data-theme="dark"] {
+  --bg: #2A211B;
+  --bg-deep: #1F1814;
+  --surface: #34281F;
+  --border: #4A3A2C;
+  --rule: #5A4A3A;
+  --text: #EDE3D2;
+  --text-soft: #C9BFAE;
+  --text-muted: #9E907E;
+  --accent: #C9A24A;
+  --accent-soft: #8B6F2C;
+  --accent-faint: rgba(201, 162, 74, 0.10);
+  --accent-faint-strong: rgba(201, 162, 74, 0.18);
+  --warn: #C07840;
+  --warn-bg: rgba(192, 120, 64, 0.10);
+  --warn-border: rgba(192, 120, 64, 0.35);
+  --gold: #D4A840;
+  --gold-text: #FFF8E8;
+}
+
+html, body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 250ms ease, color 250ms ease;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
