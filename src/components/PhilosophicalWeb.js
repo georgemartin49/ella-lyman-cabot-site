@@ -393,20 +393,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
               ? (isHov ? OUTER_COLOR : TX_SOFT)
               : (isHov ? n.color : TX);
             const fontSize = n.isOuter ? 16 : 18;
-            return (
-              <g key={i}
-                id={n.hasData ? "pw-node-" + n.key : undefined}
-                className={"pw-node" + (n.hasData ? " pw-node-active" : "")}
-                role={n.hasData ? "button" : undefined}
-                tabIndex={n.hasData ? 0 : undefined}
-                aria-label={n.hasData ? "View " + n.name : undefined}
-                onMouseEnter={function() { setTip(n.name); }}
-                onMouseLeave={function() { setTip(null); }}
-                onFocus={function() { setTip(n.name); }}
-                onBlur={function() { setTip(null); }}
-                onClick={function() { if (n.hasData) navigate({ name: "figure", figure: n.key }); }}
-                onKeyDown={function(e) { handleNodeKey(e, n); }}
-                style={{ cursor: n.hasData ? "pointer" : "default", outline: "none", opacity }}>
+
+            const visuals = (
+              <>
                 {n.hasData && (
                   <circle cx={n.x} cy={n.y} r={ringR}
                     fill="none" stroke={n.isOuter ? OUTER_COLOR : n.color}
@@ -428,7 +417,40 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
                   fontWeight={isHov && !n.isOuter ? "600" : "400"}>
                   {n.name}
                 </text>
-              </g>
+              </>
+            );
+
+            // Decorative-only nodes (no data): plain <g>, no interactivity.
+            if (!n.hasData) {
+              return (
+                <g key={i} className="pw-node" style={{ opacity }}>
+                  {visuals}
+                </g>
+              );
+            }
+
+            // Real nodes use SVG <a> with href so iOS treats taps as link
+            // activation (no first-tap-shows-hover, second-tap-clicks).
+            const href = hrefFor({ name: "figure", figure: n.key });
+            return (
+              <a key={i}
+                id={"pw-node-" + n.key}
+                href={href}
+                className="pw-node pw-node-active"
+                role="button"
+                aria-label={"View " + n.name}
+                onMouseEnter={function() { setTip(n.name); }}
+                onMouseLeave={function() { setTip(null); }}
+                onFocus={function() { setTip(n.name); }}
+                onBlur={function() { setTip(null); }}
+                onClick={function(e) {
+                  e.preventDefault();
+                  navigate({ name: "figure", figure: n.key });
+                }}
+                onKeyDown={function(e) { handleNodeKey(e, n); }}
+                style={{ cursor: "pointer", outline: "none", opacity }}>
+                {visuals}
+              </a>
             );
           })}
         </svg>
