@@ -357,6 +357,49 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         </button>
       </form>
 
+      {linesMode !== "off" && (
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "10px",
+          maxWidth: "720px",
+          padding: "0 12px"
+        }}>
+          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Rings</span>
+          {[0, 1, 2, 3, 4].map(function(ri) {
+            const enabled = enabledRings[ri];
+            const c = ri === 4 ? OUTER_COLOR : RING_COLORS[ri];
+            const labels = ["Ring I", "Ring II", "Ring III", "Ring IV", "Ring V"];
+            return (
+              <button key={ri}
+                type="button"
+                className="elc-btn"
+                aria-pressed={enabled}
+                style={{
+                  fontSize: "14px",
+                  padding: "5px 10px",
+                  opacity: enabled ? 1 : 0.55,
+                  textDecoration: enabled ? "none" : "line-through"
+                }}
+                onClick={function() {
+                  setEnabledRings(function(prev) {
+                    const next = prev.slice();
+                    next[ri] = !next[ri];
+                    if (!next.some(Boolean)) return prev;
+                    return next;
+                  });
+                }}>
+                <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: enabled ? c : "transparent", border: "1.5px solid " + c, marginRight: "6px", verticalAlign: "middle", boxSizing: "border-box" }} />
+                {labels[ri]}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div role="status" aria-live="polite" style={{ minHeight: "28px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "6px", maxWidth: "640px", textAlign: "center", padding: "0 12px" }}>
         {q && (
           <span style={{ color: MUTED, fontSize: "14px", fontStyle: "italic" }}>
@@ -520,72 +563,22 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         </svg>
       </div>
 
-      <div style={{ maxWidth: "560px", width: "100%", marginTop: "20px" }}>
-        {linesMode !== "off" && (
-          <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 8px", textAlign: "center" }}>
-            Tap a ring below to toggle its outgoing lines.
-          </p>
-        )}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px" }}>
-          {[
-            { color: RING_COLORS[0], label: "Ring I — Closest Allies",            ringIdx: 0 },
-            { color: RING_COLORS[1], label: "Ring II — Substantial Agreement",    ringIdx: 1 },
-            { color: RING_COLORS[2], label: "Ring III — Partial Agreement",       ringIdx: 2 },
-            { color: RING_COLORS[3], label: "Ring IV — Objectors",                ringIdx: 3 },
-            { color: OUTER_COLOR,    label: "Ring V — Same Outcome, Different Vocab", ringIdx: 4 },
-            { color: GOLD,           label: "ELC — Starting Point",               ringIdx: null },
-          ].map(function(item, i) {
-            const interactive = linesMode !== "off" && item.ringIdx !== null;
-            const enabled = item.ringIdx === null ? true : enabledRings[item.ringIdx];
-            const dotStyle = {
-              width: "12px",
-              height: "12px",
-              borderRadius: "50%",
-              background: enabled ? item.color : "transparent",
-              border: "1.5px solid " + item.color,
-              flexShrink: 0,
-              boxSizing: "border-box",
-            };
-            const labelStyle = {
-              color: enabled ? TX_SOFT : MUTED,
-              fontSize: "15px",
-              textDecoration: !enabled && interactive ? "line-through" : "none",
-            };
-            if (interactive) {
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  className="elc-btn"
-                  aria-pressed={enabled}
-                  onClick={function() {
-                    setEnabledRings(function(prev) {
-                      const next = prev.slice();
-                      next[item.ringIdx] = !next[item.ringIdx];
-                      return next;
-                    });
-                  }}
-                  style={{
-                    justifyContent: "flex-start",
-                    border: "none",
-                    background: "transparent",
-                    padding: "4px 0",
-                    fontSize: "15px",
-                    boxShadow: "none",
-                  }}>
-                  <span aria-hidden="true" style={dotStyle} />
-                  <span style={labelStyle}>{item.label}</span>
-                </button>
-              );
-            }
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div aria-hidden="true" style={dotStyle} />
-                <span style={labelStyle}>{item.label}</span>
-              </div>
-            );
-          })}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px", maxWidth: "560px", width: "100%", marginTop: "20px" }}>
+        {[
+          { color: RING_COLORS[0], label: "Ring I — Closest Allies" },
+          { color: RING_COLORS[1], label: "Ring II — Substantial Agreement" },
+          { color: RING_COLORS[2], label: "Ring III — Partial Agreement" },
+          { color: RING_COLORS[3], label: "Ring IV — Objectors" },
+          { color: OUTER_COLOR,    label: "Ring V — Same Outcome, Different Vocab" },
+          { color: GOLD,           label: "ELC — Starting Point" },
+        ].map(function(item, i) {
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <span style={{ color: TX_SOFT, fontSize: "15px" }}>{item.label}</span>
+            </div>
+          );
+        })}
       </div>
 
       <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
