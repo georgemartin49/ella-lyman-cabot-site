@@ -1,17 +1,18 @@
 /* Light theme — Warm Paper (default) */
 :root {
-  --bg: #EDE2C8;
-  --bg-deep: #E5D7B5;
-  --surface: #F4EBD3;
-  --border: #B59E78;
-  --rule: #C9B58D;
+  --bg: #F5ECCF;
+  --bg-deep: #ECDFB6;
+  --surface: #FAF3D8;
+  --border: #C9B58D;
+  --rule: #B59E78;
   --text: #3B2E22;
   --text-soft: #6B5A47;
-  --text-muted: #8A7A65;
+  --text-muted: #6E5E48;
   --accent: #8B0E1A;
   --accent-soft: #B23A3A;
+  --accent-border: rgba(139, 14, 26, 0.32);
   --accent-faint: rgba(139, 14, 26, 0.08);
-  --accent-faint-strong: rgba(139, 14, 26, 0.12);
+  --accent-faint-strong: rgba(139, 14, 26, 0.14);
   --warn: #8B5A18;
   --warn-bg: rgba(139, 90, 24, 0.10);
   --warn-border: rgba(139, 90, 24, 0.32);
@@ -31,6 +32,7 @@
   --text-muted: #9E907E;
   --accent: #C9A24A;
   --accent-soft: #8B6F2C;
+  --accent-border: rgba(201, 162, 74, 0.45);
   --accent-faint: rgba(201, 162, 74, 0.10);
   --accent-faint-strong: rgba(201, 162, 74, 0.18);
   --warn: #C07840;
@@ -58,4 +60,113 @@ h1, h2, h3, h4 {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Skip-to-content link, used in every page. Hidden until focused. */
+.elc-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+.elc-skip:focus {
+  left: 16px; top: 16px;
+  width: auto; height: auto;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 4px;
+  font-weight: bold;
+  z-index: 100;
+}
+
+/* Reusable chrome button — works for back/home links and toggle buttons.
+   Defined here so :hover / [aria-pressed] selectors can win against any
+   inline style overrides that might leak in. */
+.elc-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.elc-btn:hover, .elc-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+.elc-btn:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+.elc-btn[aria-pressed="true"] {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Section eyebrow heading: small uppercase label above blocks. */
+.elc-eyebrow {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+/* Cards in detail view that link to another figure. */
+.elc-figure-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  margin: -4px -8px 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 180ms ease;
+}
+.elc-figure-link:hover, .elc-figure-link:focus-visible {
+  background: var(--accent-faint);
+  outline: none;
+}
+.elc-figure-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+
+/* Print styles — clean monograph excerpts of detail pages.
+   Forces a paper-like palette regardless of theme; hides chrome. */
+@media print {
+  :root, [data-theme="dark"] {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: #999999;
+    --rule: #cccccc;
+    --text: #000000;
+    --text-soft: #333333;
+    --text-muted: #666666;
+    --accent: #5a0a13;
+    --accent-soft: #5a0a13;
+    --accent-border: #c0a0a0;
+    --accent-faint: transparent;
+    --accent-faint-strong: transparent;
+  }
+  html, body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .elc-btn, .elc-skip, [role="search"], nav[aria-label^="Other figures"],
+  header > [class*="elc-btn"], footer { display: none !important; }
+  /* Detail page header chrome */
+  header { background: transparent !important; border: none !important; padding: 0 !important; }
+  /* Sections become sequential, with tighter margins and no card backgrounds. */
+  main section {
+    background: transparent !important;
+    border: none !important;
+    border-top: 1px solid #999 !important;
+    border-radius: 0 !important;
+    padding: 12pt 0 !important;
+    page-break-inside: avoid;
+  }
+  main { padding: 0 !important; max-width: none !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+  /* Hide the SVG visualization on print — it's pixel-bound. */
+  svg { display: none !important; }
 }

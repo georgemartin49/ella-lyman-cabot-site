@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, CX, CY } from "../data/rings";
@@ -7,8 +7,9 @@ import {
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER, GOLD, GOLD_TEXT,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
-import { hrefFor, navigate } from "../router";
+import { hrefFor, navigate, replaceQuery } from "../router";
 import ThemeToggle from "./ThemeToggle";
+import Footer from "./Footer";
 
 const pwStyles = `
   .pw-node { transition: transform 200ms ease, opacity 200ms ease; }
@@ -21,22 +22,7 @@ const pwStyles = `
     stroke: var(--accent); stroke-width: 1.5; stroke-opacity: 0.9;
   }
   .pw-edge { transition: stroke-opacity 200ms ease, stroke-width 200ms ease; }
-  .pw-back, .pw-toggle {
-    transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
-  }
-  .pw-back:hover, .pw-back:focus-visible,
-  .pw-toggle:hover, .pw-toggle:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-    outline: none;
-  }
-  .pw-back:focus-visible, .pw-toggle:focus-visible,
-  .pw-search:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
-  .pw-toggle[aria-pressed="true"] {
-    background: var(--accent-faint);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+
   .pw-search {
     background: var(--surface);
     color: var(--text);
@@ -46,11 +32,10 @@ const pwStyles = `
     font-family: 'EB Garamond', Georgia, serif;
     font-size: 16px;
     outline: none;
-    transition: border-color 200ms ease;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
   }
-  .pw-search:focus-visible { border-color: var(--accent); }
-  .pw-skip { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-  .pw-skip:focus { left: 16px; top: 16px; width: auto; height: auto; padding: 8px 14px; background: var(--accent); color: var(--bg); border-radius: 4px; font-weight: bold; z-index: 100; }
+  .pw-search:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+
   @media (prefers-reduced-motion: reduce) {
     .pw-node, .pw-node .pw-dot, .pw-node .pw-ring, .pw-node text, .pw-edge { transition: none !important; }
   }
@@ -101,7 +86,7 @@ function buildNodes() {
     const key = findKey(name);
     out.push({
       name, x: p.x, y: p.y,
-      ringIdx: -1,
+      ringIdx: 4,
       color: OUTER_COLOR,
       key,
       hasData: Boolean(key && DATA[key]),
@@ -109,6 +94,40 @@ function buildNodes() {
     });
   });
   return out;
+}
+
+// Compute the next node to focus when an arrow key is pressed.
+// Left/Right cycle within the same ring (data-only). Up/Down jump to the
+// nearest-by-angle data node in the inner / outer ring, with Ring IV (3) → Outer (4).
+function nextFocusNode(nodes, current, direction) {
+  if (!current) return null;
+  if (direction === "left" || direction === "right") {
+    const ring = nodes.filter(function(n) { return n.ringIdx === current.ringIdx && n.hasData; });
+    const idx = ring.indexOf(current);
+    if (idx === -1) return null;
+    const step = direction === "right" ? 1 : -1;
+    return ring[(idx + step + ring.length) % ring.length];
+  }
+  let targetIdx;
+  if (direction === "up") {
+    if (current.ringIdx === 0) return null;
+    targetIdx = current.ringIdx - 1;
+  } else {
+    if (current.ringIdx === 4) return null;
+    targetIdx = current.ringIdx + 1;
+  }
+  const candidates = nodes.filter(function(n) { return n.ringIdx === targetIdx && n.hasData; });
+  if (candidates.length === 0) return null;
+  const curAngle = Math.atan2(current.x - CX, -(current.y - CY));
+  let best = candidates[0];
+  let bestDist = Infinity;
+  candidates.forEach(function(c) {
+    const a = Math.atan2(c.x - CX, -(c.y - CY));
+    let d = Math.abs(a - curAngle);
+    if (d > Math.PI) d = 2 * Math.PI - d;
+    if (d < bestDist) { bestDist = d; best = c; }
+  });
+  return best;
 }
 
 function buildEdges(nodes) {
@@ -133,10 +152,14 @@ function buildEdges(nodes) {
   return edges;
 }
 
-export default function PhilosophicalWeb({ theme, onToggleTheme }) {
+export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   const [tip, setTip] = useState(null);
-  const [query, setQuery] = useState("");
-  const [linesOn, setLinesOn] = useState(false);
+  const [query, setQuery] = useState(function() { return (initialQuery && initialQuery.q) || ""; });
+  const [linesOn, setLinesOn] = useState(function() { return Boolean(initialQuery && initialQuery.lines === "1"); });
+
+  useEffect(function() {
+    replaceQuery("web", { q: query.trim(), lines: linesOn ? "1" : "" });
+  }, [query, linesOn]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -144,30 +167,66 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
   const edges = useMemo(function() { return buildEdges(nodes); }, [nodes]);
 
   const q = query.trim().toLowerCase();
-  function isMatch(name) {
+  function isMatch(node) {
     if (!q) return true;
-    return name.toLowerCase().includes(q);
+    if (node.name.toLowerCase().includes(q)) return true;
+    const fig = node.key && DATA[node.key];
+    if (!fig) return false;
+    if (fig.desc && fig.desc.toLowerCase().includes(q)) return true;
+    if (fig.elc && fig.elc.toLowerCase().includes(q)) return true;
+    if (fig.title && fig.title.toLowerCase().includes(q)) return true;
+    return false;
   }
-  const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n.name); }).length : 0;
+  const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n); }).length : 0;
 
-  function handleNodeKey(e, hasData, key) {
-    if (!hasData) return;
+  function handleNodeKey(e, node) {
+    if (!node.hasData) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      navigate({ name: "figure", figure: key });
+      navigate({ name: "figure", figure: node.key });
+      return;
+    }
+    const dirMap = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+    if (dirMap[e.key]) {
+      e.preventDefault();
+      const next = nextFocusNode(nodes, node, dirMap[e.key]);
+      if (next && next.key) {
+        const el = document.getElementById("pw-node-" + next.key);
+        if (el && typeof el.focus === "function") el.focus();
+      }
     }
   }
 
   function onSubmit(e) {
     e.preventDefault();
     if (!q) return;
-    const matches = nodes.filter(function(n) { return n.hasData && isMatch(n.name); });
+    const matches = nodes.filter(function(n) { return n.hasData && isMatch(n); });
     if (matches.length === 1) navigate({ name: "figure", figure: matches[0].key });
   }
 
+  // When lines are on AND a node is focused/hovered, dim all nodes that
+  // aren't the focused one or named in its `out` list ("focus highlight").
+  const focusedKey = (function() {
+    if (!linesOn || !tip) return null;
+    const n = nodes.find(function(x) { return x.name === tip; });
+    return n && n.hasData ? n.key : null;
+  })();
+  const inFocusSet = (function() {
+    if (!focusedKey) return null;
+    const set = new Set([focusedKey]);
+    const fig = DATA[focusedKey];
+    if (fig && fig.out) {
+      fig.out.forEach(function(item) {
+        if (DATA[item[0]]) set.add(item[0]);
+      });
+    }
+    return set;
+  })();
+
   function nodeOpacity(n) {
-    if (!q) return 1;
-    return isMatch(n.name) ? 1 : 0.18;
+    if (q) return isMatch(n) ? 1 : 0.18;
+    if (inFocusSet && n.key && !inFocusSet.has(n.key)) return 0.22;
+    return 1;
   }
 
   return (
@@ -175,23 +234,12 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
       <style>{pwStyles}</style>
 
       <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-        <a href={hrefFor({ name: "landing" })} className="pw-back" style={{
-          background: "transparent",
-          border: "1px solid " + BORD,
-          color: TX,
-          padding: "8px 14px",
-          borderRadius: "4px",
-          fontSize: "15px",
-          textDecoration: "none",
-          display: "inline-block",
-          fontFamily: "'EB Garamond', Georgia, serif"
-        }}>← Home</a>
+        <a href={hrefFor({ name: "landing" })} className="elc-btn">← Home</a>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
       <h1 style={{
         color: ACCENT,
-        fontFamily: "'Cormorant Garamond', Georgia, serif",
         fontSize: isMobile ? "34px" : "44px",
         fontWeight: 600,
         margin: "0 0 8px",
@@ -210,9 +258,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
 
       <form onSubmit={onSubmit} role="search" aria-label="Search figures" style={{
         display: "flex",
-        flexWrap: "wrap",
+        flexDirection: isMobile ? "column" : "row",
         gap: "10px",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
         justifyContent: "center",
         marginBottom: "10px",
         width: "100%",
@@ -221,28 +269,30 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
         <input
           type="search"
           className="pw-search"
-          placeholder="Search figures…"
+          placeholder="Search names or text…"
           aria-label="Search figures"
           value={query}
           onChange={function(e) { setQuery(e.target.value); }}
-          style={{ flex: "1 1 220px", minWidth: 0 }}
+          style={isMobile ? { width: "100%" } : { flex: "1 1 220px", minWidth: 0 }}
         />
         <button
           type="button"
-          className="pw-toggle"
+          className="elc-btn"
           aria-pressed={linesOn}
-          onClick={function() { setLinesOn(function(v) { return !v; }); }}
-          style={{
-            background: "transparent",
-            border: "1px solid " + BORD,
-            color: TX,
-            padding: "9px 14px",
-            borderRadius: "4px",
-            fontSize: "15px",
-            fontFamily: "'EB Garamond', Georgia, serif",
-            cursor: "pointer"
-          }}>
+          style={isMobile ? { justifyContent: "center" } : undefined}
+          onClick={function() { setLinesOn(function(v) { return !v; }); }}>
           {linesOn ? "Hide Lines" : "Show Lines"}
+        </button>
+        <button
+          type="button"
+          className="elc-btn"
+          aria-label="Open a random figure"
+          style={isMobile ? { justifyContent: "center" } : undefined}
+          onClick={function() {
+            const idx = Math.floor(Math.random() * DKEYS.length);
+            navigate({ name: "figure", figure: DKEYS[idx] });
+          }}>
+          Random
         </button>
       </form>
 
@@ -278,14 +328,38 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
 
           {RINGS_CFG.map(function(ring, ri) {
             return (
-              <circle key={ring.label} cx={CX} cy={CY} r={ring.cr}
-                fill="none" stroke={RING_COLORS[ri]} strokeWidth="0.8" strokeOpacity="0.32" />
+              <g key={ring.label}>
+                <circle cx={CX} cy={CY} r={ring.cr}
+                  fill="none" stroke={RING_COLORS[ri]} strokeWidth="2.2" strokeOpacity="0.55" />
+                <text
+                  x={CX} y={CY - ring.cr - 8}
+                  textAnchor="middle"
+                  fill={RING_COLORS[ri]}
+                  fontFamily="'Cormorant Garamond', Georgia, serif"
+                  fontSize="18"
+                  fontWeight="600"
+                  opacity="0.85"
+                  letterSpacing="2">
+                  {["I","II","III","IV"][ri]}
+                </text>
+              </g>
             );
           })}
 
           <circle cx={CX} cy={CY} r={OUTER_CFG.cr}
-            fill="none" stroke={OUTER_COLOR} strokeWidth="0.9" strokeOpacity="0.42"
-            strokeDasharray="9 5" />
+            fill="none" stroke={OUTER_COLOR} strokeWidth="2.4" strokeOpacity="0.65"
+            strokeDasharray="10 6" />
+          <text
+            x={CX} y={CY - OUTER_CFG.cr - 8}
+            textAnchor="middle"
+            fill={OUTER_COLOR}
+            fontFamily="'Cormorant Garamond', Georgia, serif"
+            fontSize="18"
+            fontWeight="600"
+            opacity="0.85"
+            letterSpacing="2">
+            V
+          </text>
 
           {linesOn && (
             <g aria-hidden="true">
@@ -314,13 +388,14 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
             const opacity = nodeOpacity(n);
             const ringR = n.isOuter ? (isHov ? 12 : 10) : (isHov ? 14 : 11);
             const dotR = n.isOuter ? (isHov ? 7 : 5) : (isHov ? 9 : 6);
-            const dotFill = n.isOuter ? (isHov ? OUTER_COLOR : "#7E6EAA") : n.color;
+            const dotFill = n.isOuter ? OUTER_COLOR : n.color;
             const labelColor = n.isOuter
               ? (isHov ? OUTER_COLOR : TX_SOFT)
               : (isHov ? n.color : TX);
             const fontSize = n.isOuter ? 16 : 18;
             return (
               <g key={i}
+                id={n.hasData ? "pw-node-" + n.key : undefined}
                 className={"pw-node" + (n.hasData ? " pw-node-active" : "")}
                 role={n.hasData ? "button" : undefined}
                 tabIndex={n.hasData ? 0 : undefined}
@@ -330,7 +405,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
                 onFocus={function() { setTip(n.name); }}
                 onBlur={function() { setTip(null); }}
                 onClick={function() { if (n.hasData) navigate({ name: "figure", figure: n.key }); }}
-                onKeyDown={function(e) { handleNodeKey(e, n.hasData, n.key); }}
+                onKeyDown={function(e) { handleNodeKey(e, n); }}
                 style={{ cursor: n.hasData ? "pointer" : "default", outline: "none", opacity }}>
                 {n.hasData && (
                   <circle cx={n.x} cy={n.y} r={ringR}
@@ -384,6 +459,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme }) {
         </p>
       </aside>
 
+      <Footer inset="1100px" />
     </div>
   );
 }
