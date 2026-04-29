@@ -55,6 +55,9 @@ export default function Timeline({ theme, onToggleTheme }) {
     const ranges = parseRanges(fig.dates);
     if (!ranges) return;
     ranges.forEach(function(r, idx) {
+      // Skip pre-1700 figures so the modern era reads clearly.
+      // (Mencius, Aristotle, Epictetus/Marcus Aurelius are listed below the chart.)
+      if (r.end < 1700) return;
       entries.push({
         key,
         ring: fig.ring,
@@ -69,11 +72,16 @@ export default function Timeline({ theme, onToggleTheme }) {
   });
   entries.sort(function(a, b) { return a.start - b.start; });
 
-  const omitted = DKEYS.filter(function(key) {
+  const omittedUnparseable = DKEYS.filter(function(key) {
     return parseRanges(DATA[key].dates) === null;
   });
+  const omittedAncient = DKEYS.filter(function(key) {
+    const r = parseRanges(DATA[key].dates);
+    if (!r) return false;
+    return r.every(function(range) { return range.end < 1700; });
+  });
 
-  const minYear = Math.min.apply(null, entries.map(function(e) { return e.start; }).concat([ELC.start]));
+  const minYear = 1700;
   const maxYear = Math.max.apply(null, entries.map(function(e) { return e.end; }).concat([ELC.end]));
   const span = maxYear - minYear;
 
@@ -88,8 +96,8 @@ export default function Timeline({ theme, onToggleTheme }) {
   const H = TOP + entries.length * ROW_H + BOTTOM;
   function xFor(year) { return PAD_L + ((year - minYear) / span) * innerW; }
 
-  // Tick marks at sensible years: every 200 years from rounded down minYear to maxYear.
-  const tickStep = span > 1500 ? 200 : 100;
+  // Tick marks every 50 years across the modern range.
+  const tickStep = 50;
   const firstTick = Math.ceil(minYear / tickStep) * tickStep;
   const ticks = [];
   for (let y = firstTick; y <= maxYear; y += tickStep) ticks.push(y);
@@ -132,10 +140,10 @@ export default function Timeline({ theme, onToggleTheme }) {
           A Timeline
         </h1>
         <p style={{ color: TX_SOFT, fontSize: isMobile ? "16px" : "18px", margin: "0 auto 6px", textAlign: "center", maxWidth: "640px", lineHeight: 1.45, fontStyle: "italic" }}>
-          Each figure plotted by lifespan. ELC marked. Tap any bar to open that entry.
+          Modern figures plotted by lifespan, 1700 onward. ELC marked. Tap any bar to open that entry.
         </p>
         <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 24px", textAlign: "center" }}>
-          A complementary view to the Philosophical Web — lineage by century rather than by ring.
+          A complementary view to the Philosophical Web — lineage by decade rather than by ring.
         </p>
 
         <div style={{
@@ -222,11 +230,18 @@ export default function Timeline({ theme, onToggleTheme }) {
           </svg>
         </div>
 
-        <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", textAlign: "center", marginTop: "18px" }}>
-          {omitted.length > 0
-            ? omitted.length + " figure" + (omitted.length === 1 ? "" : "s") + " (Ubuntu and similar non-pinpointable entries) omitted from this view."
-            : "All figures shown."}
-        </p>
+        <div style={{ marginTop: "18px", textAlign: "center" }}>
+          {omittedAncient.length > 0 && (
+            <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 6px" }}>
+              Pre-1700 figures shown only in the Web: {omittedAncient.join(", ")}.
+            </p>
+          )}
+          {omittedUnparseable.length > 0 && (
+            <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: 0 }}>
+              Non-pinpointable entries omitted: {omittedUnparseable.join(", ")}.
+            </p>
+          )}
+        </div>
       </main>
 
       <Footer inset="1100px" />
