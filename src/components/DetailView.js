@@ -230,6 +230,37 @@ export default function DetailView({ name, theme, onToggleTheme }) {
           </div>
         </section>
 
+        {fig.works && fig.works.length > 0 && (
+          <section aria-label="Selected works" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+            <h3 className="elc-eyebrow">Selected Works</h3>
+            {fig.works.map(function(item, i) {
+              return (
+                <div key={i} style={{ marginBottom: "10px" }}>
+                  <span style={{ color: TX, fontSize: "16px", fontWeight: 600 }}>{item[0]}</span>
+                  <span style={{ color: MUTED, fontSize: "14px", display: "block", lineHeight: 1.5, fontStyle: "italic" }}>{item[1]}</span>
+                </div>
+              );
+            })}
+          </section>
+        )}
+
+        {fig.archives && fig.archives.length > 0 && (
+          <section aria-label="Archives" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+            <h3 className="elc-eyebrow">Archives</h3>
+            {fig.archives.map(function(item, i) {
+              return (
+                <div key={i} style={{ marginBottom: "12px" }}>
+                  <span style={{ color: TX, fontSize: "16px", fontWeight: 600, display: "block" }}>{item[0]}</span>
+                  {item.length > 2 && (
+                    <span style={{ color: TX_SOFT, fontSize: "14px", display: "block" }}>{item[1]}</span>
+                  )}
+                  <span style={{ color: MUTED, fontSize: "14px", display: "block", lineHeight: 1.5 }}>{item.length > 2 ? item[2] : item[1]}</span>
+                </div>
+              );
+            })}
+          </section>
+        )}
+
         {citedBy.length > 0 && (
           <section aria-label="Cited by other entries" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
             <h3 className="elc-eyebrow">Cited by</h3>
