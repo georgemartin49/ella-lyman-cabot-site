@@ -201,19 +201,34 @@ function serializeRings(enabled) {
   return enabled.map(function(b, i) { return b ? (i + 1) : ""; }).join("");
 }
 
+// People filters: "all" means no filter on that dimension.
+//   gender: "all" | "m" | "f"
+//   known:  "all" | "yes" | "no"
+//   arch:   "all" | "yes" | "no"
+const VALID_GENDER = { all:1, m:1, f:1 };
+const VALID_TRI    = { all:1, yes:1, no:1 };
+function parseGender(v) { return VALID_GENDER[v] ? v : "all"; }
+function parseTri(v)    { return VALID_TRI[v]    ? v : "all"; }
+
 export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   const [tip, setTip] = useState(null);
   const [query, setQuery] = useState(function() { return (initialQuery && initialQuery.q) || ""; });
   const [linesMode, setLinesMode] = useState(function() { return parseLinesMode(initialQuery && initialQuery.lines); });
   const [enabledRings, setEnabledRings] = useState(function() { return parseEnabledRings(initialQuery && initialQuery.rings); });
+  const [genderF, setGenderF] = useState(function() { return parseGender(initialQuery && initialQuery.g); });
+  const [knownF, setKnownF] = useState(function() { return parseTri(initialQuery && initialQuery.k); });
+  const [archF, setArchF] = useState(function() { return parseTri(initialQuery && initialQuery.a); });
 
   useEffect(function() {
     replaceQuery("web", {
       q: query.trim(),
       lines: linesMode === "off" ? "" : linesMode,
       rings: linesMode === "off" ? "" : serializeRings(enabledRings),
+      g: genderF === "all" ? "" : genderF,
+      k: knownF === "all" ? "" : knownF,
+      a: archF === "all" ? "" : archF,
     });
-  }, [query, linesMode, enabledRings]);
+  }, [query, linesMode, enabledRings, genderF, knownF, archF]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -277,8 +292,25 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
     return set;
   })();
 
+  function passesPeopleFilters(n) {
+    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all";
+    const fig = DATA[n.key];
+    if (genderF !== "all" && fig.gender !== genderF) return false;
+    if (knownF === "yes" && !fig.wellKnown) return false;
+    if (knownF === "no"  &&  fig.wellKnown) return false;
+    if (archF === "yes" && !fig.hasArchive) return false;
+    if (archF === "no"  &&  fig.hasArchive) return false;
+    return true;
+  }
+  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all";
+  const visibleCount = peopleFiltersActive
+    ? nodes.filter(function(n) { return n.hasData && passesPeopleFilters(n); }).length
+    : nodes.filter(function(n) { return n.hasData; }).length;
+  const totalDataCount = nodes.filter(function(n) { return n.hasData; }).length;
+
   function nodeOpacity(n) {
     if (q) return isMatch(n) ? 1 : 0.18;
+    if (peopleFiltersActive && !passesPeopleFilters(n)) return 0.18;
     if (inFocusSet && n.key && !inFocusSet.has(n.key)) return 0.22;
     return 1;
   }
@@ -397,6 +429,57 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
               </button>
             );
           })}
+        </div>
+      )}
+
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "10px 18px",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: "10px",
+        maxWidth: "780px",
+        padding: "0 12px"
+      }}>
+        {[
+          { label: "Gender",    value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
+          { label: "Known",     value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
+          { label: "Archive",   value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
+        ].map(function(group, gi) {
+          return (
+            <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+              <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "2px" }}>{group.label}</span>
+              {group.opts.map(function(opt) {
+                const pressed = group.value === opt[0];
+                return (
+                  <button key={opt[0]}
+                    type="button"
+                    className="elc-btn"
+                    aria-pressed={pressed}
+                    style={{ fontSize: "13px", padding: "4px 9px", opacity: pressed ? 1 : 0.7 }}
+                    onClick={function() { group.set(opt[0]); }}>
+                    {opt[1]}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+        {peopleFiltersActive && (
+          <button type="button" className="elc-btn"
+            style={{ fontSize: "13px", padding: "4px 9px" }}
+            onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); }}>
+            Reset
+          </button>
+        )}
+      </div>
+
+      {peopleFiltersActive && (
+        <div role="status" aria-live="polite" style={{ marginBottom: "6px", textAlign: "center" }}>
+          <span style={{ color: MUTED, fontSize: "13px", fontStyle: "italic" }}>
+            {visibleCount} of {totalDataCount} figures match
+          </span>
         </div>
       )}
 

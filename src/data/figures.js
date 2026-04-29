@@ -426,6 +426,57 @@ const DATA = {
 
 const DKEYS = Object.keys(DATA);
 
+// Per-figure metadata used by the web's people filters.
+//   gender: "m" | "f" | "other"   (for composites where all members share a gender, use that gender; "other" for non-personal entries like Ubuntu)
+//   wellKnown: true | false       (rough proxy: would a typical philosophy undergrad recognise the name?)
+// Merged into DATA below so existing code that reads `fig.gender` / `fig.wellKnown` works without per-entry edits.
+const META = {
+  Emerson:        { gender:"m", wellKnown:true  },
+  James:          { gender:"m", wellKnown:true  },
+  Weil:           { gender:"f", wellKnown:true  },
+  "P-Pattison":   { gender:"m", wellKnown:false },
+  Royce:          { gender:"m", wellKnown:false },
+  Palmer:         { gender:"m", wellKnown:false },
+  Caird:          { gender:"m", wellKnown:false },
+  Bosanquet:      { gender:"m", wellKnown:false },
+  Murdoch:        { gender:"f", wellKnown:true  },
+  "Du Bois":      { gender:"m", wellKnown:true  },
+  "T.H. Green":   { gender:"m", wellKnown:true  },
+  Calkins:        { gender:"f", wellKnown:false },
+  Follett:        { gender:"f", wellKnown:false },
+  Korsgaard:      { gender:"f", wellKnown:false },
+  Bergson:        { gender:"m", wellKnown:true  },
+  Alain:          { gender:"m", wellKnown:false },
+  Buchler:        { gender:"m", wellKnown:false },
+  Bowne:          { gender:"m", wellKnown:false },
+  Ritchie:        { gender:"m", wellKnown:false },
+  Aristotle:      { gender:"m", wellKnown:true  },
+  Langer:         { gender:"f", wellKnown:false },
+  Hegel:          { gender:"m", wellKnown:true  },
+  Sartre:         { gender:"m", wellKnown:true  },
+  Dewey:          { gender:"m", wellKnown:true  },
+  Kant:           { gender:"m", wellKnown:true  },
+  Peirce:         { gender:"m", wellKnown:true  },
+  Bradley:        { gender:"m", wellKnown:true  },
+  "Hume/Parfit":  { gender:"m", wellKnown:true  },
+  "Moore/Russell":{ gender:"m", wellKnown:true  },
+  Metzinger:      { gender:"m", wellKnown:false },
+  "Foucault(E)":  { gender:"m", wellKnown:true  },
+  Mencius:        { gender:"m", wellKnown:true  },
+  "Epictetus/M.A.":{ gender:"m", wellKnown:true  },
+  Ubuntu:         { gender:"other", wellKnown:false },
+  Buber:          { gender:"m", wellKnown:true  },
+  "Maine de Biran":{ gender:"m", wellKnown:false },
+  Freire:         { gender:"m", wellKnown:true  },
+  Bakhtin:        { gender:"m", wellKnown:true  },
+};
+DKEYS.forEach(function(k) {
+  const m = META[k] || { gender:"other", wellKnown:false };
+  DATA[k].gender = m.gender;
+  DATA[k].wellKnown = m.wellKnown;
+  DATA[k].hasArchive = Boolean(DATA[k].archives && DATA[k].archives.length > 0);
+});
+
 // CITED_BY[figureKey] = [{ from, note }, ...] — built once by inverting `out` lists.
 const CITED_BY = (function() {
   const map = {};
