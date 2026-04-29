@@ -2365,48 +2365,65 @@ function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
         </div>
       )}
 
-      <div style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "10px 18px",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: "10px",
+      <section aria-label="Filter people" style={{
+        width: "100%",
         maxWidth: "780px",
-        padding: "0 12px"
+        marginBottom: "12px",
+        padding: isMobile ? "10px 12px" : "10px 16px",
+        background: SURF,
+        border: "1px solid " + BORD,
+        borderRadius: "6px",
+        boxSizing: "border-box"
       }}>
-        {[
-          { label: "Gender",    value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
-          { label: "Known",     value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
-          { label: "Archive",   value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
-        ].map(function(group, gi) {
-          return (
-            <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-              <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "2px" }}>{group.label}</span>
-              {group.opts.map(function(opt) {
-                const pressed = group.value === opt[0];
-                return (
-                  <button key={opt[0]}
-                    type="button"
-                    className="elc-btn"
-                    aria-pressed={pressed}
-                    style={{ fontSize: "13px", padding: "4px 9px", opacity: pressed ? 1 : 0.7 }}
-                    onClick={function() { group.set(opt[0]); }}>
-                    {opt[1]}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-        {peopleFiltersActive && (
-          <button type="button" className="elc-btn"
-            style={{ fontSize: "13px", padding: "4px 9px" }}
-            onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); }}>
-            Reset
-          </button>
-        )}
-      </div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          marginBottom: "8px"
+        }}>
+          <span style={{ color: ACCENT, fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "13px", letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>Filter people</span>
+          {peopleFiltersActive && (
+            <button type="button" className="elc-btn"
+              style={{ fontSize: "13px", padding: "5px 10px" }}
+              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); }}>
+              Reset
+            </button>
+          )}
+        </div>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          gap: isMobile ? "10px" : "10px 20px",
+          alignItems: isMobile ? "stretch" : "center"
+        }}>
+          {[
+            { label: "Gender",  value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
+            { label: "Known",   value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
+            { label: "Archive", value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
+          ].map(function(group, gi) {
+            return (
+              <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", minWidth: isMobile ? "64px" : "auto" }}>{group.label}</span>
+                {group.opts.map(function(opt) {
+                  const pressed = group.value === opt[0];
+                  return (
+                    <button key={opt[0]}
+                      type="button"
+                      className="elc-btn"
+                      aria-pressed={pressed}
+                      style={{ fontSize: "14px", padding: "7px 12px", opacity: pressed ? 1 : 0.7 }}
+                      onClick={function() { group.set(opt[0]); }}>
+                      {opt[1]}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {peopleFiltersActive && (
         <div role="status" aria-live="polite" style={{ marginBottom: "6px", textAlign: "center" }}>
