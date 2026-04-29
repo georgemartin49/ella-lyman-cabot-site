@@ -142,24 +142,78 @@ function buildEdges(nodes) {
     fig.out.forEach(function(item) {
       const targetName = item[0];
       if (targetName === "ELC") {
-        edges.push({ from: src, to: { x: CX, y: CY, name: "ELC", isCenter: true }, color: src.color });
+        edges.push({ from: src, to: { x: CX, y: CY, name: "ELC", isCenter: true }, color: src.color, fromRingIdx: src.ringIdx });
         return;
       }
       const target = byTarget.get(targetName);
-      if (target) edges.push({ from: src, to: target, color: src.color });
+      if (target) edges.push({ from: src, to: target, color: src.color, fromRingIdx: src.ringIdx });
     });
   });
   return edges;
 }
 
+// Quadratic Bezier from (x1,y1) to (x2,y2), bowed sideways away from the
+// diagram center so spokes don't cross through ELC.
+function arcPath(x1, y1, x2, y2) {
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const chord = Math.hypot(dx, dy);
+  if (chord < 1) return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
+  let px = -dy / chord;
+  let py = dx / chord;
+  // Pick the perpendicular pointing away from the center.
+  const towardCx = CX - mx;
+  const towardCy = CY - my;
+  if (px * towardCx + py * towardCy > 0) { px = -px; py = -py; }
+  const offset = chord * 0.18;
+  const cx = mx + px * offset;
+  const cy = my + py * offset;
+  return "M " + x1 + " " + y1 + " Q " + cx + " " + cy + " " + x2 + " " + y2;
+}
+
+// Lines mode: "off" hides edges; "all" shows every edge (current default
+// behaviour); "focus" shows only the currently hovered/focused node's
+// outgoing lineage. Backward-compatible: the legacy `?lines=1` URL
+// param maps to "all".
+function parseLinesMode(raw) {
+  if (raw === "all" || raw === "focus") return raw;
+  if (raw === "1") return "all";
+  return "off";
+}
+
+// "12345" or "1,3,5" → array of which 1-based rings are enabled.
+// Default: all five enabled.
+function parseEnabledRings(raw) {
+  const all = [true, true, true, true, true];
+  if (!raw) return all;
+  const out = [false, false, false, false, false];
+  String(raw).replace(/[^1-5]/g, "").split("").forEach(function(d) {
+    out[parseInt(d, 10) - 1] = true;
+  });
+  return out.some(Boolean) ? out : all;
+}
+
+function serializeRings(enabled) {
+  const allOn = enabled.every(Boolean);
+  if (allOn) return "";
+  return enabled.map(function(b, i) { return b ? (i + 1) : ""; }).join("");
+}
+
 export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery }) {
   const [tip, setTip] = useState(null);
   const [query, setQuery] = useState(function() { return (initialQuery && initialQuery.q) || ""; });
-  const [linesOn, setLinesOn] = useState(function() { return Boolean(initialQuery && initialQuery.lines === "1"); });
+  const [linesMode, setLinesMode] = useState(function() { return parseLinesMode(initialQuery && initialQuery.lines); });
+  const [enabledRings, setEnabledRings] = useState(function() { return parseEnabledRings(initialQuery && initialQuery.rings); });
 
   useEffect(function() {
-    replaceQuery("web", { q: query.trim(), lines: linesOn ? "1" : "" });
-  }, [query, linesOn]);
+    replaceQuery("web", {
+      q: query.trim(),
+      lines: linesMode === "off" ? "" : linesMode,
+      rings: linesMode === "off" ? "" : serializeRings(enabledRings),
+    });
+  }, [query, linesMode, enabledRings]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -207,7 +261,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   // When lines are on AND a node is focused/hovered, dim all nodes that
   // aren't the focused one or named in its `out` list ("focus highlight").
   const focusedKey = (function() {
-    if (!linesOn || !tip) return null;
+    if (linesMode === "off" || !tip) return null;
     const n = nodes.find(function(x) { return x.name === tip; });
     return n && n.hasData ? n.key : null;
   })();
@@ -278,10 +332,17 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         <button
           type="button"
           className="elc-btn"
-          aria-pressed={linesOn}
+          aria-pressed={linesMode !== "off"}
+          aria-label={"Lines: " + linesMode + ". Click to cycle to next mode."}
           style={isMobile ? { justifyContent: "center" } : undefined}
-          onClick={function() { setLinesOn(function(v) { return !v; }); }}>
-          {linesOn ? "Hide Lines" : "Show Lines"}
+          onClick={function() {
+            setLinesMode(function(m) {
+              if (m === "off") return "all";
+              if (m === "all") return "focus";
+              return "off";
+            });
+          }}>
+          Lines: {linesMode === "off" ? "Off" : linesMode === "all" ? "All" : "Focus"}
         </button>
         <button
           type="button"
@@ -361,18 +422,21 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             V
           </text>
 
-          {linesOn && (
+          {linesMode !== "off" && (
             <g aria-hidden="true">
               {edges.map(function(e, i) {
-                const isActive = tip && e.from.name === tip;
+                if (!enabledRings[e.fromRingIdx]) return null;
+                const isFocused = tip && e.from.name === tip;
+                if (linesMode === "focus" && !isFocused) return null;
                 return (
-                  <line key={i}
+                  <path key={i}
                     className="pw-edge"
-                    x1={e.from.x} y1={e.from.y}
-                    x2={e.to.x} y2={e.to.y}
+                    d={arcPath(e.from.x, e.from.y, e.to.x, e.to.y)}
+                    fill="none"
                     stroke={e.color}
-                    strokeWidth={isActive ? 1.6 : 0.7}
-                    strokeOpacity={isActive ? 0.7 : 0.22} />
+                    strokeWidth={isFocused ? 3.0 : 2.0}
+                    strokeOpacity={isFocused ? 0.95 : 0.78}
+                    strokeLinecap="round" />
                 );
               })}
             </g>
@@ -456,22 +520,72 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         </svg>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px", maxWidth: "560px", width: "100%", marginTop: "20px" }}>
-        {[
-          { color: RING_COLORS[0], label: "Ring I — Closest Allies" },
-          { color: RING_COLORS[1], label: "Ring II — Substantial Agreement" },
-          { color: RING_COLORS[2], label: "Ring III — Partial Agreement" },
-          { color: RING_COLORS[3], label: "Ring IV — Objectors" },
-          { color: OUTER_COLOR,    label: "Outer — Same Outcome, Different Vocab" },
-          { color: GOLD,           label: "ELC — Starting Point" },
-        ].map(function(item, i) {
-          return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", background: item.color, flexShrink: 0 }} />
-              <span style={{ color: TX_SOFT, fontSize: "15px" }}>{item.label}</span>
-            </div>
-          );
-        })}
+      <div style={{ maxWidth: "560px", width: "100%", marginTop: "20px" }}>
+        {linesMode !== "off" && (
+          <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 8px", textAlign: "center" }}>
+            Tap a ring below to toggle its outgoing lines.
+          </p>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px" }}>
+          {[
+            { color: RING_COLORS[0], label: "Ring I — Closest Allies",            ringIdx: 0 },
+            { color: RING_COLORS[1], label: "Ring II — Substantial Agreement",    ringIdx: 1 },
+            { color: RING_COLORS[2], label: "Ring III — Partial Agreement",       ringIdx: 2 },
+            { color: RING_COLORS[3], label: "Ring IV — Objectors",                ringIdx: 3 },
+            { color: OUTER_COLOR,    label: "Ring V — Same Outcome, Different Vocab", ringIdx: 4 },
+            { color: GOLD,           label: "ELC — Starting Point",               ringIdx: null },
+          ].map(function(item, i) {
+            const interactive = linesMode !== "off" && item.ringIdx !== null;
+            const enabled = item.ringIdx === null ? true : enabledRings[item.ringIdx];
+            const dotStyle = {
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: enabled ? item.color : "transparent",
+              border: "1.5px solid " + item.color,
+              flexShrink: 0,
+              boxSizing: "border-box",
+            };
+            const labelStyle = {
+              color: enabled ? TX_SOFT : MUTED,
+              fontSize: "15px",
+              textDecoration: !enabled && interactive ? "line-through" : "none",
+            };
+            if (interactive) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="elc-btn"
+                  aria-pressed={enabled}
+                  onClick={function() {
+                    setEnabledRings(function(prev) {
+                      const next = prev.slice();
+                      next[item.ringIdx] = !next[item.ringIdx];
+                      return next;
+                    });
+                  }}
+                  style={{
+                    justifyContent: "flex-start",
+                    border: "none",
+                    background: "transparent",
+                    padding: "4px 0",
+                    fontSize: "15px",
+                    boxShadow: "none",
+                  }}>
+                  <span aria-hidden="true" style={dotStyle} />
+                  <span style={labelStyle}>{item.label}</span>
+                </button>
+              );
+            }
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div aria-hidden="true" style={dotStyle} />
+                <span style={labelStyle}>{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
