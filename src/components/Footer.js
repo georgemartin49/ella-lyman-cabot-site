@@ -2,7 +2,7 @@ import { TX_SOFT, MUTED, RULE } from "../theme";
 import { hrefFor } from "../router";
 
 // Hand-edit when posting a substantive update.
-const LAST_UPDATED = "April 2026";
+const LAST_UPDATED = "September 2026";
 
 export default function Footer({ inset }) {
   return (
