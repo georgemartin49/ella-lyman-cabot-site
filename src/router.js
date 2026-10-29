@@ -6,10 +6,14 @@ import { useState, useEffect } from "react";
 //   #/web                    → { name: "web", query: {...} }
 //   #/timeline               → { name: "timeline" }
 //   #/figures                → { name: "figures" } (A to Z index)
+//   #/life, #/writings, #/edition, #/everyday-ethics → reading pages
 //   #/figure/<key>           → { name: "figure", figure: <decoded key> }
 //
 // `?key=value&key2=value2` query strings are supported on any route and
 // surfaced as the `query` field.
+
+// Reading pages addressed by their name alone (#/life etc.).
+const PAGES = { life: true, writings: true, edition: true, "everyday-ethics": true };
 
 function parseQuery(str) {
   const out = {};
@@ -35,6 +39,7 @@ function parseRoute(hash) {
   if (path === "/web") return { name: "web", query };
   if (path === "/timeline") return { name: "timeline", query };
   if (path === "/figures") return { name: "figures", query };
+  if (PAGES[path.slice(1)]) return { name: path.slice(1), query };
   const m = path.match(/^\/figure\/(.+)$/);
   if (m) {
     try { return { name: "figure", figure: decodeURIComponent(m[1]), query }; }
@@ -66,6 +71,7 @@ export function hrefFor(route) {
   if (route.name === "web") return "#/web";
   if (route.name === "timeline") return "#/timeline";
   if (route.name === "figures") return "#/figures";
+  if (PAGES[route.name]) return "#/" + route.name;
   if (route.name === "figure") return "#/figure/" + encodeURIComponent(route.figure);
   return "#/";
 }

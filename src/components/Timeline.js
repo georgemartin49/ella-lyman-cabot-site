@@ -2,13 +2,11 @@ import { useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import {
-  BG, SURF, BORD, ACCENT, TX, TX_SOFT, MUTED, GOLD,
-  RING_COLORS, OUTER_COLOR
+  SURF, BORD, ACCENT, TX_SOFT, MUTED, GOLD, RING_COLORS, OUTER_COLOR
 } from "../theme";
 import { hrefFor } from "../router";
 import { fullName } from "../data/connections";
-import ThemeToggle from "./ThemeToggle";
-import Footer from "./Footer";
+import Page from "./Page";
 
 // Parse a `dates` string into one-or-more {start,end} ranges.
 // Returns null when the string isn't pinpointable on a year axis.
@@ -48,6 +46,7 @@ const ELC = { start: 1866, end: 1934 };
 
 export default function Timeline({ theme, onToggleTheme }) {
   const isMobile = useIsMobile();
+  const [activeRow, setActiveRow] = useState(null);
 
   // View mode: "chrono" sorts every figure by birth year on a single axis;
   // "ring" groups figures into Ring I–V sections. Both kept; chrono is default.
@@ -136,7 +135,8 @@ export default function Timeline({ theme, onToggleTheme }) {
   const PAD_R = 16;
   const ROW_H = 30;
   const SECTION_GAP = 24;
-  const TOP = 60;
+  const TOP = 8;
+  const AXIS_H = 44;
   const BOTTOM = 16;
   const innerW = W - PAD_L - PAD_R;
   function xFor(year) { return PAD_L + ((year - minYear) / span) * innerW; }
@@ -156,48 +156,23 @@ export default function Timeline({ theme, onToggleTheme }) {
   for (let y = firstTick; y <= maxYear; y += tickStep) ticks.push(y);
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", color: TX, display: "flex", flexDirection: "column" }}>
-      <a href="#timeline-main" className="elc-skip">Skip to content</a>
+    <Page current="timeline" theme={theme} onToggleTheme={onToggleTheme} width="1100px">
       <style>{".tl-row:focus { outline: none; } .tl-row:focus-visible .tl-hit, .tl-row:hover .tl-hit { fill: var(--accent-faint); stroke: var(--accent); stroke-width: 2; }"}</style>
-
-      <div style={{
-        width: "100%",
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: isMobile ? "16px 14px 0" : "28px 20px 0",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "12px",
-        boxSizing: "border-box"
-      }}>
-        <a href={hrefFor({ name: "landing" })} className="elc-btn">← Home</a>
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-      </div>
-
-      <main id="timeline-main" tabIndex={-1} style={{
-        width: "100%",
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: isMobile ? "20px 14px 32px" : "32px 20px 48px",
-        boxSizing: "border-box"
-      }}>
         <h1 style={{
           color: ACCENT,
           fontSize: isMobile ? "34px" : "44px",
           fontWeight: 600,
           margin: "0 0 8px",
           letterSpacing: "0.005em",
-          textAlign: "center",
           lineHeight: 1.1
         }}>
-          A Timeline
+          Timeline
         </h1>
-        <p style={{ color: TX_SOFT, fontSize: isMobile ? "16px" : "18px", margin: "0 auto 6px", textAlign: "center", maxWidth: "640px", lineHeight: 1.45, fontStyle: "italic" }}>
-          Modern figures plotted by lifespan, 1700 onward. ELC marked. Tap any bar to open that entry.
+        <p style={{ color: TX_SOFT, fontSize: isMobile ? "16px" : "18px", margin: "0 0 6px", maxWidth: "46em", lineHeight: 1.45, fontStyle: "italic" }}>
+          Figures plotted by lifespan from 1700 onward, with Cabot's lifetime shaded. Select a row to open that entry.
         </p>
-        <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 20px", textAlign: "center" }}>
-          A companion to the Philosophical Web, arranged by date rather than by ring. A full list of figures is on the <a href={hrefFor({ name: "figures" })}>A to Z page</a>.
+        <p style={{ color: MUTED, fontSize: "15px", margin: "0 0 20px" }}>
+          The bars show lifespans only; they do not show who influenced whom. A full list of figures is on the <a href={hrefFor({ name: "figures" })}>A to Z page</a>.
         </p>
 
         <div style={{
@@ -205,7 +180,7 @@ export default function Timeline({ theme, onToggleTheme }) {
           flexWrap: "wrap",
           gap: "8px",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           marginBottom: "16px"
         }}>
           <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>View</span>
@@ -218,7 +193,7 @@ export default function Timeline({ theme, onToggleTheme }) {
           flexWrap: "wrap",
           gap: "6px",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           marginBottom: "16px"
         }}>
           <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Rings</span>
@@ -256,7 +231,7 @@ export default function Timeline({ theme, onToggleTheme }) {
           flexWrap: "wrap",
           gap: "6px",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           marginBottom: "16px"
         }}>
           <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Region</span>
@@ -289,7 +264,7 @@ export default function Timeline({ theme, onToggleTheme }) {
           flexWrap: "wrap",
           gap: "6px",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           marginBottom: "16px"
         }}>
           <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Zoom</span>
@@ -308,56 +283,50 @@ export default function Timeline({ theme, onToggleTheme }) {
           })}
         </div>
 
-        <div style={{
+        <div tabIndex={0} role="region" aria-label="Timeline chart; scrolls within its frame" style={{
           background: SURF,
           border: "1px solid " + BORD,
           borderRadius: "6px",
-          padding: "12px",
-          overflowX: "auto"
+          overflow: "auto",
+          maxHeight: "78vh"
         }}>
+          <div style={{ minWidth: isMobile ? "640px" : "auto" }}>
+          <div aria-hidden="true" style={{ position: "sticky", top: 0, zIndex: 2, background: SURF, borderBottom: "1px solid " + BORD }}>
+            <svg viewBox={"0 0 " + W + " " + AXIS_H} style={{ width: "100%", height: "auto", display: "block" }}>
+              {ticks.map(function(year) {
+                const label = year < 0 ? Math.abs(year) + " BC" : String(year);
+                return <text key={year} x={xFor(year)} y={AXIS_H - 8} textAnchor="middle" fill="var(--text-muted)" fontSize="13" fontFamily="'EB Garamond', Georgia, serif">{label}</text>;
+              })}
+              <text x={(xFor(ELC.start) + xFor(ELC.end)) / 2} y={16} textAnchor="middle" fill={ACCENT}
+                fontFamily="'Cormorant Garamond', Georgia, serif" fontWeight="600" fontSize="14" letterSpacing="2">
+                Cabot · {ELC.start}-{ELC.end}
+              </text>
+            </svg>
+          </div>
           <svg
             viewBox={"0 0 " + W + " " + H}
-            style={{ width: "100%", height: "auto", minWidth: isMobile ? "640px" : "auto", display: "block" }}
+            style={{ width: "100%", height: "auto", display: "block" }}
             role="group"
             aria-label="Timeline of figures by lifespan, with Cabot's lifetime highlighted. Each row is a link to that figure's entry.">
 
             {ticks.map(function(year) {
               const x = xFor(year);
-              const label = year < 0 ? Math.abs(year) + " BC" : String(year);
-              return (
-                <g key={year}>
-                  <line x1={x} x2={x} y1={TOP - 8} y2={H - BOTTOM + 4}
-                    stroke="var(--rule)" strokeWidth="1" strokeOpacity="0.5" />
-                  <text x={x} y={TOP - 14} textAnchor="middle" fill="var(--text-muted)" fontSize="13"
-                    fontFamily="'EB Garamond', Georgia, serif">{label}</text>
-                </g>
-              );
+              return <line key={year} x1={x} x2={x} y1={0} y2={H - BOTTOM + 4} stroke="var(--rule)" strokeWidth="1" strokeOpacity="0.5" />;
             })}
 
             <rect
-              x={xFor(ELC.start)} y={TOP - 4}
+              x={xFor(ELC.start)} y={0}
               width={Math.max(2, xFor(ELC.end) - xFor(ELC.start))}
-              height={H - TOP - BOTTOM + 4}
+              height={H - BOTTOM}
               fill={GOLD} fillOpacity="0.13" />
             <line
               x1={xFor(ELC.start)} x2={xFor(ELC.start)}
-              y1={TOP - 4} y2={H - BOTTOM}
+              y1={0} y2={H - BOTTOM}
               stroke={GOLD} strokeWidth="1.2" strokeOpacity="0.5" strokeDasharray="3 3" />
             <line
               x1={xFor(ELC.end)} x2={xFor(ELC.end)}
-              y1={TOP - 4} y2={H - BOTTOM}
+              y1={0} y2={H - BOTTOM}
               stroke={GOLD} strokeWidth="1.2" strokeOpacity="0.5" strokeDasharray="3 3" />
-            <text
-              x={(xFor(ELC.start) + xFor(ELC.end)) / 2}
-              y={TOP - 28}
-              textAnchor="middle"
-              fill={ACCENT}
-              fontFamily="'Cormorant Garamond', Georgia, serif"
-              fontWeight="600"
-              fontSize="14"
-              letterSpacing="2">
-              Cabot · {ELC.start}-{ELC.end}
-            </text>
 
             {(function() {
               const rendered = [];
@@ -387,13 +356,18 @@ export default function Timeline({ theme, onToggleTheme }) {
                   // The label is the short name only, so it always fits the margin;
                   // the full name, dates, and title are in the link's accessible name and tooltip.
                   const description = fullName(e.key) + e.suffix + ", " + e.dates.replace(/[\u2013\u2014]/g, "-") + (e.title ? ", " + e.title : "");
+                  const rowId = si + "-" + i;
+                  const active = activeRow === rowId;
                   rendered.push(
-                    <a key={"row-" + si + "-" + i}
+                    <a key={"row-" + rowId}
                       href={hrefFor({ name: "figure", figure: e.key })}
                       aria-label={description}
                       className="tl-row"
+                      onFocus={function() { setActiveRow(rowId); }} onBlur={function() { setActiveRow(null); }}
+                      onMouseEnter={function() { setActiveRow(rowId); }} onMouseLeave={function() { setActiveRow(null); }}
                       style={{ cursor: "pointer" }}>
                       <title>{description}</title>
+                      {i % 2 === 1 && <rect x={0} y={y} width={W} height={ROW_H} fill="var(--text)" fillOpacity="0.045" />}
                       <rect x={0} y={y} width={W} height={ROW_H} fill="transparent" className="tl-hit" />
                       <text x={PAD_L - 8} y={labelY} textAnchor="end"
                         fill="var(--text)"
@@ -405,6 +379,12 @@ export default function Timeline({ theme, onToggleTheme }) {
                         rx="3"
                         fill={e.color}
                         opacity="0.85" />
+                      {active && (
+                        <text x={xe + 8 > W - 90 ? xs - 8 : xe + 8} y={labelY} textAnchor={xe + 8 > W - 90 ? "end" : "start"}
+                          fill="var(--text)" fontSize="13" fontFamily="'EB Garamond', Georgia, serif">
+                          {e.dates.replace(/[\u2013\u2014]/g, "-")}
+                        </text>
+                      )}
                     </a>
                   );
                   cursor += ROW_H;
@@ -414,23 +394,21 @@ export default function Timeline({ theme, onToggleTheme }) {
               return rendered;
             })()}
           </svg>
+          </div>
         </div>
 
-        <div style={{ marginTop: "18px", textAlign: "center" }}>
+        <div style={{ marginTop: "18px" }}>
           {omittedAncient.length > 0 && (
             <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 6px" }}>
-              Pre-1700 figures shown only in the Web: {omittedAncient.join(", ")}.
+              Figures before 1700 appear on the Map only: {omittedAncient.join(", ")}.
             </p>
           )}
           {omittedUnparseable.length > 0 && (
             <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: 0 }}>
-              Non-pinpointable entries omitted: {omittedUnparseable.join(", ")}.
+              Entries without a single lifespan are omitted: {omittedUnparseable.join(", ")}.
             </p>
           )}
         </div>
-      </main>
-
-      <Footer inset="1100px" />
-    </div>
+    </Page>
   );
 }

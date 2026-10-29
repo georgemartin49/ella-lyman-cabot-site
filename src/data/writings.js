@@ -10,13 +10,19 @@ const EDITOR = {
   email: "castleberryj@uindy.edu",
 };
 
-// label: what the link opens. Never call a catalog listing a readable text.
+// Selected books. Cabot published seven books between 1906 and 1929; only
+// verified titles are listed. `published` is the original publication;
+// each link says which copy or edition it opens.
 const BOOKS = [
-  { title: "Everyday Ethics", cite: "New York: Henry Holt, 1906.", link: ["Digitized text", "https://archive.org/details/cu31924031217874"] },
-  { title: "Ethics for Children", cite: "Boston: Houghton Mifflin, 1910.", link: ["Online Books Page listing, with links to digitized copies", "https://onlinebooks.library.upenn.edu/webbin/book/lookupname?key=Cabot,+Ella+Lyman"] },
-  { title: "A Course in Citizenship", cite: "With Fannie Fern Andrews, Fanny E. Coe, Mabel Hill, and Mary McSkimmon. Boston: Houghton Mifflin, 1914.", link: ["Digitized text (later edition, titled A Course in Citizenship and Patriotism)", "https://archive.org/details/courseincitizens00cabouoft"] },
-  { title: "Seven Ages of Childhood", cite: "Boston: Houghton Mifflin, 1921.", link: ["Digitized text", "https://archive.org/details/sevenageschildh00cabogoog"] },
-  { title: "Temptations to Rightdoing", cite: "1929.", link: null },
+  { title: "Everyday Ethics", authorship: null, published: "New York: Henry Holt, 1906.", page: "everyday-ethics",
+    links: [["Digitized copy of the 1906 Henry Holt edition (Internet Archive)", "https://archive.org/details/cu31924031217874"]] },
+  { title: "Ethics for Children", authorship: null, published: "Boston: Houghton Mifflin, 1910.",
+    links: [["Online Books Page listing, with links to digitized copies", "https://onlinebooks.library.upenn.edu/webbin/book/lookupname?key=Cabot,+Ella+Lyman"]] },
+  { title: "A Course in Citizenship", authorship: "With Fannie Fern Andrews, Fanny E. Coe, Mabel Hill, and Mary McSkimmon.", published: "Boston: Houghton Mifflin, 1914.",
+    links: [["Digitized copy of a later edition, retitled A Course in Citizenship and Patriotism (Internet Archive)", "https://archive.org/details/courseincitizens00cabouoft"]] },
+  { title: "Seven Ages of Childhood", authorship: null, published: "Boston: Houghton Mifflin, 1921.",
+    links: [["Digitized copy of the 1921 edition (Internet Archive)", "https://archive.org/details/sevenageschildh00cabogoog"]] },
+  { title: "Temptations to Rightdoing", authorship: null, published: "1929.", links: [] },
 ];
 
 const ARCHIVES = [

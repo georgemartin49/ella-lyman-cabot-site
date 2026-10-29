@@ -4,82 +4,79 @@ import { DATA, CITED_BY, ALIASES } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, RING_NAMES } from "../data/rings";
 import { CONNECTION_TYPES, connectionOf, fullName } from "../data/connections";
 import { EVIDENCE, COMPARISONS } from "../data/evidence";
-import {
-  BG, SURF, BORD, ACCENT, ACCENT_FAINT,
-  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER,
-  RING_COLORS, OUTER_COLOR
-} from "../theme";
-import { hrefFor, navigate } from "../router";
-import ThemeToggle from "./ThemeToggle";
-import Footer from "./Footer";
+import { TX_SOFT, MUTED, BORD, WARN, RING_COLORS, OUTER_COLOR } from "../theme";
+import { hrefFor } from "../router";
+import Page from "./Page";
 import { recordView } from "../hooks/useRecentlyViewed";
 
-// Find the prev/next figure (with data) in the same ring as `name`.
+const ORIGIN = "https://ellalymancabot.org";
+// The month of the last substantive revision, unless an entry records its own (`revised`).
+const DEFAULT_REVISED = "October 2026";
+
+const css = `
+  .entry { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  @media (min-width: 980px) { .entry { grid-template-columns: 180px minmax(0, 38em); } }
+  .entry-toc-wide { display: none; }
+  @media (min-width: 980px) { .entry-toc-wide { display: block; } .entry-toc-narrow { display: none; } }
+  .entry-toc ol { list-style: none; margin: 0; padding: 0; }
+  .entry-toc li { margin: 0 0 6px; }
+  .entry-toc button { background: none; border: none; padding: 2px 0; font: inherit; font-size: 16px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+  .entry-toc-wide nav { position: sticky; top: 16px; }
+  .entry-body h2 { color: var(--accent); font-size: 24px; font-weight: 600; margin: 34px 0 10px; scroll-margin-top: 16px; }
+  .entry-body h2:focus { outline: none; }
+  .entry-body h3 { font-size: 19px; margin: 18px 0 6px; }
+  .entry-body p, .entry-body li { font-size: 18px; line-height: 1.7; margin: 0 0 12px; }
+  .entry-body .note { font-size: 15px; color: var(--text-soft); font-style: italic; }
+  .entry-body .meta { font-size: 16px; color: var(--text-soft); }
+  .entry-body blockquote { margin: 0 0 16px; padding-left: 16px; border-left: 3px solid var(--accent-border); }
+  .entry-body .item { margin: 0 0 12px; }
+  .entry-body .item strong { display: block; font-size: 18px; }
+  .entry-body .item span { display: block; font-size: 16px; color: var(--text-soft); line-height: 1.5; }
+`;
+
+// Find the previous and next figure in the same ring.
 function findSiblings(name) {
   const allRings = RINGS_CFG.map(function(r) { return r.nodes; }).concat([OUTER_CFG.nodes]);
   for (let r = 0; r < allRings.length; r++) {
-    const idx = allRings[r].indexOf(name);
-    if (idx === -1) continue;
     const ring = allRings[r];
-    function step(start, dir) {
-      let i = start;
-      for (let k = 0; k < ring.length; k++) {
-        i = (i + dir + ring.length) % ring.length;
-        if (DATA[ring[i]]) return ring[i];
-      }
+    const idx = ring.indexOf(name);
+    if (idx === -1) continue;
+    const step = function(dir) {
+      let i = idx;
+      for (let k = 0; k < ring.length; k++) { i = (i + dir + ring.length) % ring.length; if (DATA[ring[i]]) return ring[i]; }
       return null;
-    }
-    return { prev: step(idx, -1), next: step(idx, 1) };
+    };
+    return { prev: step(-1), next: step(1) };
   }
   return { prev: null, next: null };
 }
 
-const COL = "720px";
-
-// One line in an influence list, linked when the person has an entry.
-function Related({ item }) {
-  const key = DATA[item[0]] ? item[0] : null;
-  const inner = (
-    <>
-      <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>
-        {key ? fullName(key) : item[0]}
-        {key && <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>}
-      </span>
-      <span style={{ color: TX_SOFT, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
-    </>
-  );
-  return (
-    <div style={{ marginBottom: "8px" }}>
-      {key ? <a href={hrefFor({ name: "figure", figure: key })} className="elc-figure-link">{inner}</a>
-           : <div style={{ padding: "4px 8px", margin: "-4px -8px 6px" }}>{inner}</div>}
-    </div>
-  );
+function Item({ title, text, figKey }) {
+  const head = figKey
+    ? <a href={hrefFor({ name: "figure", figure: figKey })}>{fullName(figKey)}</a>
+    : title;
+  return <div className="item"><strong>{head}</strong>{text && <span>{text}</span>}</div>;
 }
 
-// A philosophical comparison, set out in four parts. Parts the editor has not
-// yet supplied are marked as such rather than left out.
-function Comparison({ name, fig }) {
-  const c = COMPARISONS[name] || {};
-  const part = { color: TX, fontSize: "17px", lineHeight: 1.65, margin: "0 0 14px" };
-  const pending = { color: TX_SOFT, fontSize: "15px", fontStyle: "italic", margin: "0 0 14px" };
-  const Passage = function({ p, who }) {
-    return p
-      ? <blockquote style={{ ...part, margin: "0 0 14px", paddingLeft: "14px", borderLeft: "2px solid var(--accent-border)" }}>{p.text}<span style={{ display: "block", color: TX_SOFT, fontSize: "14px", fontStyle: "italic" }}>{p.source}</span></blockquote>
-      : <p style={pending}>A passage from {who} is to be added.</p>;
-  };
+// "On this page": buttons rather than #fragment links, because the site's
+// addresses live in the fragment. Each moves focus to its heading.
+function Contents({ sections }) {
+  function go(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute("tabindex", "-1");
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "start" });
+  }
+  const list = (
+    <ol>
+      {sections.map(function(s) { return <li key={s.id}><button type="button" onClick={function() { go(s.id); }}>{s.label}</button></li>; })}
+    </ol>
+  );
   return (
     <>
-      <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "0 0 14px" }}>
-        An interpretive comparison by the editor. No historical contact or influence is claimed.
-      </p>
-      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>From Cabot</h3>
-      <Passage p={c.cabot} who="Cabot" />
-      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>From {fullName(name)}</h3>
-      <Passage p={c.other} who={fig.kind === "tradition" ? "this tradition" : fullName(name)} />
-      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>The editor's interpretation</h3>
-      <p style={part}>{c.interpretation || fig.elc}</p>
-      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>A difference or limit</h3>
-      {c.limit ? <p style={{ ...part, marginBottom: 0 }}>{c.limit}</p> : <p style={{ ...pending, marginBottom: 0 }}>To be added.</p>}
+      <div className="entry-toc entry-toc-wide"><nav aria-label="On this page"><p className="elc-eyebrow" style={{ marginBottom: "8px" }}>On this page</p>{list}</nav></div>
+      <details className="entry-toc entry-toc-narrow"><summary style={{ cursor: "pointer", fontSize: "16px", padding: "4px 0" }}>On this page</summary><nav aria-label="On this page (collapsible)" style={{ padding: "6px 0 0" }}>{list}</nav></details>
     </>
   );
 }
@@ -90,323 +87,132 @@ export default function DetailView({ name: requested, theme, onToggleTheme }) {
   const fig = DATA[name];
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
-
-  useEffect(function() {
-    function onKey(e) { if (e.key === "Escape") navigate({ name: "web" }); }
-    window.addEventListener("keydown", onKey);
-    return function() { window.removeEventListener("keydown", onKey); };
-  }, []);
-
   useEffect(function() { if (DATA[name]) recordView(name); }, [name]);
-
-  function copyLink() {
-    if (typeof window === "undefined" || !navigator.clipboard) return;
-    navigator.clipboard.writeText(window.location.href).then(function() {
-      setCopied(true);
-      setTimeout(function() { setCopied(false); }, 1600);
-    });
-  }
-
-  // Web Share API on supporting platforms (mobile Safari, Android Chrome,
-  // recent desktop browsers). Falls back to copy-link silently elsewhere.
-  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-  function shareLink() {
-    if (!canShare) { copyLink(); return; }
-    navigator.share({
-      title: name + " · Ella Lyman Cabot",
-      text: fig ? (fig.title + ", " + fig.dates) : name,
-      url: window.location.href,
-    }).catch(function() { /* user cancelled */ });
-  }
 
   if (!fig) {
     return (
-      <div style={{ background: BG, minHeight: "100vh", color: TX, padding: "40px", textAlign: "center" }}>
-        <p style={{ color: TX_SOFT, fontSize: "18px", marginBottom: "20px" }}>
-          No entry found for <strong style={{ color: TX }}>{name}</strong>.
-        </p>
-        <a href={hrefFor({ name: "figures" })} className="elc-btn">All figures, A to Z</a>
-      </div>
+      <Page current="figure" theme={theme} onToggleTheme={onToggleTheme}>
+        <h1 style={{ color: "var(--accent)" }}>Entry not found</h1>
+        <p style={{ fontSize: "18px" }}>There is no entry for &ldquo;{requested}&rdquo;. <a href={hrefFor({ name: "figures" })}>See all figures, A to Z</a>.</p>
+      </Page>
     );
   }
 
-  const isOuter = fig.ring === 5;
-  const ringColor = isOuter ? OUTER_COLOR : (RING_COLORS[fig.ring - 1] || RING_COLORS[0]);
-  const ringLabel = ["Ring I", "Ring II", "Ring III", "Ring IV", "Ring V"][fig.ring - 1];
   const conn = connectionOf(name);
+  const connType = CONNECTION_TYPES[conn.type];
   const evidence = EVIDENCE[name];
-  const siblings = findSiblings(name);
+  const comparison = conn.type === "comparison" ? (COMPARISONS[name] || {}) : null;
+  const hasPassages = Boolean(comparison && (comparison.cabot || comparison.other));
+  const ringColor = fig.ring === 5 ? OUTER_COLOR : RING_COLORS[fig.ring - 1];
   const influences = fig.inf || [];
-  const influenced = (fig.out || []).filter(function(item) { return item[0] !== "ELC"; });
-  const citedBy = CITED_BY[name] || [];
+  const later = (fig.out || []).filter(function(item) { return item[0] !== "ELC"; });
+  const mentions = CITED_BY[name] || [];
+  const works = (fig.readings && fig.readings.length ? fig.readings : fig.works) || [];
+  const archives = fig.archives || [];
+  const siblings = findSiblings(name);
+  const revised = fig.revised || DEFAULT_REVISED;
+  const url = ORIGIN + "/" + hrefFor({ name: "figure", figure: name });
 
-  const headerInline = isMobile
-    ? { display: "flex", flexDirection: "column", alignItems: "stretch", gap: "12px" }
-    : { display: "flex", alignItems: "center", gap: "16px" };
+  // Sections in reading order; only those with content are shown or listed.
+  const sections = [
+    { id: "connection", label: "Connection" },
+    (evidence || hasPassages) && { id: "evidence", label: evidence ? "Evidence" : "Comparison" },
+    { id: "interpretation", label: "Interpretation" },
+    works.length > 0 && { id: "works", label: fig.kind === "tradition" ? "Authors and texts" : "Works" },
+    archives.length > 0 && { id: "sources", label: "Sources" },
+    (influences.length || later.length || mentions.length) ? { id: "related", label: "Related" } : null,
+    { id: "cite", label: "Cite this entry" },
+  ].filter(Boolean);
+
+  function copyLink() {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(window.location.href).then(function() { setCopied(true); setTimeout(function() { setCopied(false); }, 1600); });
+  }
 
   return (
-    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", color: TX }}>
-      <a href="#detail-main" className="elc-skip">Skip to content</a>
+    <Page current="figure" theme={theme} onToggleTheme={onToggleTheme} width="1000px">
+      <style>{css}</style>
+      <p style={{ fontSize: "15px", margin: "0 0 6px" }}><a href={hrefFor({ name: "figures" })}>Figures A to Z</a></p>
+      <h1 style={{ color: "var(--accent)", fontSize: isMobile ? "32px" : "40px", fontWeight: 600, margin: 0, lineHeight: 1.12 }}>{fullName(name)}</h1>
+      <p style={{ color: TX_SOFT, fontSize: "18px", margin: "4px 0 6px" }}>{fig.dates.replace(/[–—]/g, "-")} · {fig.title}</p>
+      <p style={{ color: TX_SOFT, fontSize: "15px", margin: "0 0 18px" }}>
+        <span aria-hidden="true" style={{ display: "inline-block", width: "9px", height: "9px", borderRadius: "50%", background: ringColor, marginRight: "6px" }} />
+        {RING_NAMES[fig.ring - 1]} · {connType.label}
+        {!fig.confirmed && <> · <span style={{ color: WARN }}>some claims awaiting verification</span></>}
+        <button type="button" className="elc-btn" style={{ fontSize: "13px", padding: "2px 8px", marginLeft: "10px" }} aria-live="polite" onClick={copyLink}>{copied ? "Link copied" : "Copy link"}</button>
+      </p>
 
-      <header style={{ background: SURF, borderBottom: "1px solid " + BORD, padding: isMobile ? "16px" : "16px 24px", ...headerInline }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
-          <a
-            href={hrefFor({ name: "web" })}
-            aria-label="Back to philosophical web"
-            className="elc-btn">
-            ← Back
-          </a>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <button type="button" className="elc-btn" aria-live="polite" onClick={copyLink}>
-              {copied ? "✓ Copied" : "Copy link"}
-            </button>
-            {canShare && (
-              <button type="button" className="elc-btn" onClick={shareLink}>
-                Share
-              </button>
-            )}
-            {isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}
-          </div>
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <nav aria-label="Breadcrumb" style={{ marginBottom: "4px", fontSize: "13px", color: MUTED, lineHeight: 1.4 }}>
-            <a href={hrefFor({ name: "landing" })} style={{ color: MUTED, textDecoration: "none", borderBottom: "1px dotted currentColor" }}>Home</a>
-            <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
-            <a href={hrefFor({ name: "web" })} style={{ color: MUTED, textDecoration: "none", borderBottom: "1px dotted currentColor" }}>Web</a>
-            <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
-            <span><span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: ringColor, marginRight: "5px" }} />{ringLabel}</span>
-          </nav>
-          <h1 style={{
-            color: ACCENT,
-            fontSize: isMobile ? "28px" : "34px",
-            fontWeight: 600,
-            margin: 0,
-            letterSpacing: "0.005em",
-            lineHeight: 1.15
-          }}>{fullName(name)}</h1>
-          <p style={{ color: TX_SOFT, fontSize: "15px", margin: "4px 0 0", lineHeight: 1.4, fontStyle: "italic" }}>
-            {fig.dates.replace(/[\u2013\u2014]/g, "-")} · {fig.title}
-          </p>
-        </div>
-        {!isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}
-      </header>
+      <div className="entry">
+        <Contents sections={sections} />
+        <div className="entry-body">
+          <h2 id="connection" style={{ marginTop: 0 }}>Connection to Cabot</h2>
+          <p><strong>{connType.label}.</strong> {conn.basis}</p>
+          {!fig.confirmed && fig.unconfirmedNote && <p className="note">Awaiting verification: {fig.unconfirmedNote}</p>}
 
-      <main id="detail-main" tabIndex={-1} style={{ padding: isMobile ? "20px 16px" : "32px 24px", maxWidth: COL, margin: "0 auto", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}>
-
-        {!fig.confirmed && (
-          <aside role="note" style={{
-            background: WARN_BG,
-            borderRadius: "6px",
-            border: "1px solid " + WARN_BORDER,
-            padding: "12px 16px",
-            display: "flex",
-            gap: "10px",
-            alignItems: "flex-start"
-          }}>
-            <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
-            <div>
-              <p style={{ color: WARN, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.16em", margin: "0 0 4px", fontWeight: 600 }}>Claims awaiting verification</p>
-              <p style={{ color: TX_SOFT, fontSize: "15px", lineHeight: 1.55, margin: 0 }}>
-                {fig.unconfirmedNote || "Some claims in this entry are working hypotheses or inferences pending further archival verification."}
-              </p>
-            </div>
-          </aside>
-        )}
-
-        <section aria-labelledby="placement" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "16px 22px" }}>
-          <h2 id="placement" className="elc-eyebrow">Place in the map</h2>
-          <p style={{ color: TX, fontSize: "16px", lineHeight: 1.6, margin: "0 0 6px" }}>
-            <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: ringColor, marginRight: "8px" }} />
-            <strong>{RING_NAMES[fig.ring - 1]}.</strong> The editor's judgment of how close this position is to Cabot's.
-          </p>
-          <p style={{ color: TX, fontSize: "16px", lineHeight: 1.6, margin: 0 }}>
-            <strong>{CONNECTION_TYPES[conn.type].label}.</strong> {conn.basis}
-          </p>
-        </section>
-
-        <section aria-label="Their position" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-          <h2 className="elc-eyebrow">Their position</h2>
-          <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.desc}</p>
-        </section>
-
-        <section aria-labelledby="connection" style={{ background: ACCENT_FAINT, borderRadius: "6px", border: "1px solid var(--accent-border)", padding: "20px 22px" }}>
-          <h2 id="connection" className="elc-eyebrow">★ Connection to Cabot</h2>
-          {evidence ? (
-            <>
-              <h3 className="elc-eyebrow" style={{ fontSize: "12px", marginTop: "4px" }}>Documentary findings</h3>
-              <ol style={{ margin: "0 0 16px", paddingLeft: "1.3em" }}>
-                {evidence.documented.map(function(c, i) {
-                  return (
-                    <li key={i} style={{ color: TX, fontSize: "17px", lineHeight: 1.6, marginBottom: "10px" }}>
-                      {c.text}
-                      <span style={{ display: "block", color: TX_SOFT, fontSize: "14px", fontStyle: "italic" }}>
-                        {c.source ? "Source: " + c.source : "Source: citation being added from the editor's archival notes."}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-              <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>The editor's interpretation</h3>
-              <p style={{ color: TX, fontSize: "17px", lineHeight: 1.65, margin: 0 }}>{evidence.interpretation}</p>
-            </>
-          ) : conn.type === "comparison" ? (
-            <Comparison name={name} fig={fig} />
-          ) : (
-            <>
-              <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.elc}</p>
-              <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "12px 0 0" }}>
-                This paragraph combines archival findings with the editor's interpretation. Archival references, where they exist, are listed under Archives below.
-              </p>
-            </>
-          )}
-        </section>
-
-        {fig.readings && fig.readings.length > 0 && (
-          <section aria-labelledby="readings" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 id="readings" className="elc-eyebrow">Key authors and texts</h2>
-            {fig.readings.map(function(item, i) {
-              return (
-                <div key={i} style={{ marginBottom: "10px" }}>
-                  <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>{item[0]}</span>
-                  <span style={{ color: TX_SOFT, fontSize: "15px", display: "block", lineHeight: 1.5, fontStyle: "italic" }}>{item[1]}</span>
-                </div>
-              );
-            })}
-          </section>
-        )}
-
-        {(influences.length > 0 || influenced.length > 0) && (
-          <div style={{ display: "grid", gridTemplateColumns: isMobile || !influences.length || !influenced.length ? "1fr" : "1fr 1fr", gap: "16px" }}>
-            {influences.length > 0 && (
-              <section aria-labelledby="influences" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-                <h2 id="influences" className="elc-eyebrow">Influences on them</h2>
-                {influences.map(function(item, i) { return <Related key={i} item={item} />; })}
-              </section>
-            )}
-            {influenced.length > 0 && (
-              <section aria-labelledby="influenced" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-                <h2 id="influenced" className="elc-eyebrow">Their influence on others</h2>
-                <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "0 0 12px" }}>
-                  Later thinkers and developments; their relation to Cabot is given above.
-                </p>
-                {influenced.map(function(item, i) { return <Related key={i} item={item} />; })}
-              </section>
-            )}
-          </div>
-        )}
-
-        {fig.works && fig.works.length > 0 && (
-          <section aria-label="Selected works" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 className="elc-eyebrow">Selected works</h2>
-            {fig.works.map(function(item, i) {
-              return (
-                <div key={i} style={{ marginBottom: "10px" }}>
-                  <span style={{ color: TX, fontSize: "16px", fontWeight: 600 }}>{item[0]}</span>
-                  <span style={{ color: MUTED, fontSize: "14px", display: "block", lineHeight: 1.5, fontStyle: "italic" }}>{item[1]}</span>
-                </div>
-              );
-            })}
-          </section>
-        )}
-
-        {fig.archives && fig.archives.length > 0 && (
-          <section aria-label="Archives" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 className="elc-eyebrow">Archives</h2>
-            {fig.archives.map(function(item, i) {
-              return (
-                <div key={i} style={{ marginBottom: "12px" }}>
-                  <span style={{ color: TX, fontSize: "16px", fontWeight: 600, display: "block" }}>{item[0]}</span>
-                  {item.length > 2 && (
-                    <span style={{ color: TX_SOFT, fontSize: "14px", display: "block" }}>{item[1]}</span>
-                  )}
-                  <span style={{ color: MUTED, fontSize: "14px", display: "block", lineHeight: 1.5 }}>{item.length > 2 ? item[2] : item[1]}</span>
-                </div>
-              );
-            })}
-          </section>
-        )}
-
-        {citedBy.length > 0 && (
-          <section aria-label="Cited by other entries" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 className="elc-eyebrow">Cited by</h2>
-            <p style={{ color: MUTED, fontSize: "14px", margin: "0 0 14px", fontStyle: "italic" }}>
-              Figures whose entry treats {fullName(name)} as an influence or reference point.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {citedBy.map(function(item, i) {
-                const fromFig = DATA[item.from];
-                const fromColor = (fromFig.ring === 5 ? OUTER_COLOR : RING_COLORS[fromFig.ring - 1] || RING_COLORS[0]);
+          {evidence && <>
+            <h2 id="evidence">Documentary evidence</h2>
+            <ol style={{ paddingLeft: "1.3em" }}>
+              {evidence.documented.map(function(c, i) {
                 return (
-                  <a key={i} href={hrefFor({ name: "figure", figure: item.from })} className="elc-figure-link">
-                    <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>
-                      <span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: fromColor, marginRight: "6px" }} />
-                      {fullName(item.from)}
-                      <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>
+                  <li key={i}>{c.text}
+                    <span className="meta" style={{ display: "block", fontStyle: "italic" }}>
+                      {c.source ? "Source: " + c.source : "Source: citation pending from the editor's archival notes."}
                     </span>
-                    <span style={{ color: MUTED, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item.note}</span>
-                  </a>
+                  </li>
                 );
               })}
-            </div>
-          </section>
-        )}
+            </ol>
+          </>}
 
-        {(siblings.prev || siblings.next) && (
-          <nav aria-label={"Other figures in " + ringLabel} style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "stretch",
-            gap: "12px",
-            marginTop: "8px"
-          }}>
-            <div style={{ flex: 1, display: "flex" }}>
-              {siblings.prev && (
-                <a
-                  href={hrefFor({ name: "figure", figure: siblings.prev })}
-                  className="elc-figure-link"
-                  style={{
-                    flex: 1,
-                    border: "1px solid " + BORD,
-                    borderRadius: "6px",
-                    padding: "12px 14px",
-                    margin: 0
-                  }}>
-                  <span style={{ display: "block", color: MUTED, fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "4px" }}>
-                    ← Previous in {ringLabel}
-                  </span>
-                  <span style={{ display: "block", color: TX, fontSize: "17px", fontWeight: 600 }}>
-                    {siblings.prev}
-                  </span>
-                </a>
-              )}
-            </div>
-            <div style={{ flex: 1, display: "flex" }}>
-              {siblings.next && (
-                <a
-                  href={hrefFor({ name: "figure", figure: siblings.next })}
-                  className="elc-figure-link"
-                  style={{
-                    flex: 1,
-                    border: "1px solid " + BORD,
-                    borderRadius: "6px",
-                    padding: "12px 14px",
-                    margin: 0,
-                    textAlign: "right"
-                  }}>
-                  <span style={{ display: "block", color: MUTED, fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "4px" }}>
-                    Next in {ringLabel} →
-                  </span>
-                  <span style={{ display: "block", color: TX, fontSize: "17px", fontWeight: 600 }}>
-                    {siblings.next}
-                  </span>
-                </a>
-              )}
-            </div>
-          </nav>
-        )}
+          {!evidence && hasPassages && <>
+            <h2 id="evidence">The comparison</h2>
+            {comparison.cabot && <blockquote><p>{comparison.cabot.text}</p><p className="meta">Cabot, {comparison.cabot.source}</p></blockquote>}
+            {comparison.other && <blockquote><p>{comparison.other.text}</p><p className="meta">{fullName(name)}, {comparison.other.source}</p></blockquote>}
+          </>}
 
-      </main>
-      <Footer inset={COL} />
-    </div>
+          <h2 id="interpretation">Interpretation</h2>
+          {evidence
+            ? <p>{evidence.interpretation}</p>
+            : <p>{(comparison && comparison.interpretation) || fig.elc}</p>}
+          {comparison && comparison.limit && <p><strong>A difference.</strong> {comparison.limit}</p>}
+          {comparison && !hasPassages && <p className="note">This comparison is the editor's interpretation; the passages on which it rests are being prepared.</p>}
+          {!evidence && !comparison && <p className="note">This account combines archival findings with the editor's interpretation; citations for individual claims are being added.</p>}
+          <h3>{fig.kind === "tradition" ? "The tradition" : "Their position"}</h3>
+          <p>{fig.desc}</p>
+
+          {works.length > 0 && <>
+            <h2 id="works">{fig.kind === "tradition" ? "Authors and texts" : "Works"}</h2>
+            {works.map(function(w, i) { return <Item key={i} title={w[0]} text={w[1]} />; })}
+          </>}
+
+          {archives.length > 0 && <>
+            <h2 id="sources">Sources</h2>
+            {archives.map(function(a, i) { return <Item key={i} title={a[0]} text={a.length > 2 ? a[1] + ". " + a[2] : a[1]} />; })}
+          </>}
+
+          {(influences.length > 0 || later.length > 0 || mentions.length > 0) && <>
+            <h2 id="related">Related</h2>
+            {influences.length > 0 && <><h3>Influences on {fullName(name)}</h3>
+              {influences.map(function(it, i) { return <Item key={i} title={it[0]} text={it[1]} figKey={DATA[it[0]] ? it[0] : null} />; })}</>}
+            {later.length > 0 && <><h3>Later thought and reception</h3>
+              {later.map(function(it, i) { return <Item key={i} title={it[0]} text={it[1]} figKey={DATA[it[0]] ? it[0] : null} />; })}</>}
+            {mentions.length > 0 && <><h3>Mentioned in other entries</h3>
+              <p className="note">Other entries on this site that refer to {fullName(name)}. These are cross-references, not historical citations.</p>
+              {mentions.map(function(m, i) { return <Item key={i} text={m.note} figKey={m.from} />; })}</>}
+          </>}
+
+          <h2 id="cite">Cite this entry</h2>
+          <p className="meta">Revised {revised}.</p>
+          <p className="meta">Castleberry, Jacob B., ed. &ldquo;{fullName(name)}.&rdquo; <em>Ella Lyman Cabot: A Research Resource</em>. Revised {revised}. {url}</p>
+
+          {(siblings.prev || siblings.next) && (
+            <nav aria-label={"Other figures in " + RING_NAMES[fig.ring - 1]} style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "28px", paddingTop: "14px", borderTop: "1px solid " + BORD }}>
+              <span>{siblings.prev && <><span style={{ display: "block", fontSize: "13px", color: MUTED }}>Previous in ring</span><a href={hrefFor({ name: "figure", figure: siblings.prev })}>{fullName(siblings.prev)}</a></>}</span>
+              <span style={{ textAlign: "right" }}>{siblings.next && <><span style={{ display: "block", fontSize: "13px", color: MUTED }}>Next in ring</span><a href={hrefFor({ name: "figure", figure: siblings.next })}>{fullName(siblings.next)}</a></>}</span>
+            </nav>
+          )}
+        </div>
+      </div>
+    </Page>
   );
 }
