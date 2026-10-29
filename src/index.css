@@ -13,7 +13,7 @@
   --accent-border: rgba(139, 14, 26, 0.32);
   --accent-faint: rgba(139, 14, 26, 0.08);
   --accent-faint-strong: rgba(139, 14, 26, 0.14);
-  --warn: #8B5A18;
+  --warn: #6E4510; /* 4.5:1 or better on the warning tint */
   --warn-bg: rgba(139, 90, 24, 0.10);
   --warn-border: rgba(139, 90, 24, 0.32);
   --gold: #B8893A;
@@ -35,7 +35,7 @@
   --accent-border: rgba(201, 162, 74, 0.45);
   --accent-faint: rgba(201, 162, 74, 0.10);
   --accent-faint-strong: rgba(201, 162, 74, 0.18);
-  --warn: #C07840;
+  --warn: #DDA06A;
   --warn-bg: rgba(192, 120, 64, 0.10);
   --warn-border: rgba(192, 120, 64, 0.35);
   --gold: #D4A840;
@@ -97,9 +97,8 @@ code {
 .elc-btn:hover, .elc-btn:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
-  outline: none;
 }
-.elc-btn:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+.elc-btn:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 .elc-btn[aria-pressed="true"] {
   background: var(--accent-faint);
   border-color: var(--accent);
@@ -129,9 +128,8 @@ code {
 }
 .elc-figure-link:hover, .elc-figure-link:focus-visible {
   background: var(--accent-faint);
-  outline: none;
 }
-.elc-figure-link:focus-visible { box-shadow: 0 0 0 2px var(--accent-faint-strong); }
+.elc-figure-link:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 
 /* Print styles — clean monograph excerpts of detail pages.
    Forces a paper-like palette regardless of theme; hides chrome. */
@@ -170,3 +168,12 @@ code {
   /* Hide the SVG visualization on print — it's pixel-bound. */
   svg { display: none !important; }
 }
+
+/* Pages move focus to <main> for skip links; the landmark itself needs no ring. */
+main:focus { outline: none; }
+
+/* Visible focus for every link and control; the accent meets 3:1 on both themes. */
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Links in running text: the accent colour, underlined, in both themes. */
+a { color: var(--accent); text-underline-offset: 3px; }

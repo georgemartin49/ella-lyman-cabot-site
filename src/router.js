@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 //   #/                       → { name: "landing" }
 //   #/web                    → { name: "web", query: {...} }
 //   #/timeline               → { name: "timeline" }
+//   #/figures                → { name: "figures" } (A to Z index)
 //   #/figure/<key>           → { name: "figure", figure: <decoded key> }
 //
 // `?key=value&key2=value2` query strings are supported on any route and
@@ -33,6 +34,7 @@ function parseRoute(hash) {
   if (path === "" || path === "/") return { name: "landing", query };
   if (path === "/web") return { name: "web", query };
   if (path === "/timeline") return { name: "timeline", query };
+  if (path === "/figures") return { name: "figures", query };
   const m = path.match(/^\/figure\/(.+)$/);
   if (m) {
     try { return { name: "figure", figure: decodeURIComponent(m[1]), query }; }
@@ -46,7 +48,13 @@ export function useRoute() {
     return parseRoute(typeof window !== "undefined" ? window.location.hash : "");
   });
   useEffect(function() {
-    function onChange() { setRoute(parseRoute(window.location.hash)); }
+    // Skip links point at in-page ids ("#landing-main"); those are not routes,
+    // so they must not send the reader back to the homepage.
+    function onChange() {
+      const h = window.location.hash;
+      if (h && h !== "#" && !h.startsWith("#/")) return;
+      setRoute(parseRoute(h));
+    }
     window.addEventListener("hashchange", onChange);
     return function() { window.removeEventListener("hashchange", onChange); };
   }, []);
@@ -57,6 +65,7 @@ export function hrefFor(route) {
   if (route.name === "landing") return "#/";
   if (route.name === "web") return "#/web";
   if (route.name === "timeline") return "#/timeline";
+  if (route.name === "figures") return "#/figures";
   if (route.name === "figure") return "#/figure/" + encodeURIComponent(route.figure);
   return "#/";
 }
