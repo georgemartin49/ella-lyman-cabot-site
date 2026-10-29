@@ -38,17 +38,19 @@ export default function ConnectionKey({ compact }) {
   );
 }
 
-// The editor's signed account of how the map was built. Replace the text below
-// with the editor's own introduction when it is ready.
+// The editor's signed account of how the map was made: paragraphs and a
+// signature line. Not shown until the editor supplies it.
+export const MAP_INTRODUCTION = null; // { paragraphs: ["..."], signature: "Jacob B. Castleberry, month year" }
+
 export function MapIntroduction() {
+  if (!MAP_INTRODUCTION) return null;
   return (
-    <section aria-labelledby="map-intro" style={{ background: SURF, border: "1px dashed " + BORD, borderRadius: "6px", padding: "16px 20px" }}>
+    <section aria-labelledby="map-intro">
       <h2 id="map-intro" className="elc-eyebrow">How this map was made</h2>
-      <p style={{ color: TX_SOFT, fontSize: "16px", lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>
-        A signed introduction by Jacob B. Castleberry, explaining how the figures were chosen and placed and the evidence
-        behind each relationship, will appear here. Until then, every ring placement and comparison on this site should be
-        read as the editor's provisional judgment.
-      </p>
+      {MAP_INTRODUCTION.paragraphs.map(function(t, i) {
+        return <p key={i} style={{ color: TX, fontSize: "17px", lineHeight: 1.65, margin: "0 0 12px" }}>{t}</p>;
+      })}
+      <p style={{ color: TX_SOFT, fontSize: "15px", fontStyle: "italic", margin: 0 }}>{MAP_INTRODUCTION.signature}</p>
     </section>
   );
 }

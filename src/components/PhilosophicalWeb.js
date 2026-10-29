@@ -3,16 +3,14 @@ import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, RING_NAMES, CX, CY } from "../data/rings";
 import { CONNECTION_TYPES, HISTORICAL, connectionOf, fullName } from "../data/connections";
-import FigureList, { matchesQuery } from "./FigureList";
-import ConnectionKey, { MapIntroduction } from "./ConnectionKey";
+import FigureList from "./FigureList";
+import ConnectionKey, { MapIntroduction, MAP_INTRODUCTION } from "./ConnectionKey";
+import Page from "./Page";
+import { searchFigures } from "../data/search";
 import {
-  BG, SURF, BORD, ACCENT,
-  TX, TX_SOFT, MUTED, GOLD, GOLD_TEXT,
-  RING_COLORS, OUTER_COLOR
+  BG, ACCENT, TX, TX_SOFT, MUTED, GOLD, GOLD_TEXT, RING_COLORS, OUTER_COLOR
 } from "../theme";
 import { hrefFor, navigate, replaceQuery } from "../router";
-import ThemeToggle from "./ThemeToggle";
-import Footer from "./Footer";
 
 const pwStyles = `
   .pw-node { transition: transform 200ms ease, opacity 200ms ease; }
@@ -34,7 +32,6 @@ const pwStyles = `
     padding: 9px 12px;
     font-family: 'EB Garamond', Georgia, serif;
     font-size: 16px;
-    outline: none;
     transition: border-color 200ms ease, box-shadow 200ms ease;
   }
   .pw-search:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-faint-strong); }
@@ -224,10 +221,16 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   const [tip, setTip] = useState(null);
   const [query, setQuery] = useState(function() { return (initialQuery && initialQuery.q) || ""; });
   const [linesMode, setLinesMode] = useState(function() { return parseLinesMode(initialQuery && initialQuery.lines); });
-  const [enabledRings, setEnabledRings] = useState(function() { return parseEnabledRings(initialQuery && initialQuery.rings); });
+  const [enabledRings] = useState(function() { return parseEnabledRings(initialQuery && initialQuery.rings); });
   const [genderF, setGenderF] = useState(function() { return parseGender(initialQuery && initialQuery.g); });
   const [archF, setArchF] = useState(function() { return parseTri(initialQuery && initialQuery.a); });
   const [regionF, setRegionF] = useState(function() { return (initialQuery && initialQuery.r) || "all"; });
+  const [relF, setRelF] = useState(function() { return (initialQuery && CONNECTION_TYPES[initialQuery.rel]) ? initialQuery.rel : "all"; });
+  // Map and List show the same figures; narrow screens open in List.
+  const [view, setView] = useState(function() {
+    if (initialQuery && (initialQuery.view === "map" || initialQuery.view === "list")) return initialQuery.view;
+    return typeof window !== "undefined" && window.innerWidth < 640 ? "list" : "map";
+  });
 
   useEffect(function() {
     replaceQuery("web", {
@@ -237,8 +240,10 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
       g: genderF === "all" ? "" : genderF,
       a: archF === "all" ? "" : archF,
       r: regionF === "all" ? "" : regionF,
+      rel: relF === "all" ? "" : relF,
+      view: view,
     });
-  }, [query, linesMode, enabledRings, genderF, archF, regionF]);
+  }, [query, linesMode, enabledRings, genderF, archF, regionF, relF, view]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -246,12 +251,11 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   const edges = useMemo(function() { return buildEdges(nodes); }, [nodes]);
 
   const q = query.trim().toLowerCase();
+  const matchSet = useMemo(function() { return new Set(searchFigures(query).map(function(r) { return r.key; })); }, [query]);
   function isMatch(node) {
     if (!q) return true;
-    if (node.name.toLowerCase().includes(q)) return true;
-    return Boolean(node.key && DATA[node.key] && matchesQuery(node.key, q));
+    return Boolean(node.key && matchSet.has(node.key));
   }
-  const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n); }).length : 0;
 
   function handleNodeKey(e, node) {
     if (!node.hasData) return;
@@ -274,8 +278,8 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   function onSubmit(e) {
     e.preventDefault();
     if (!q) return;
-    const matches = nodes.filter(function(n) { return n.hasData && isMatch(n); });
-    if (matches.length === 1) navigate({ name: "figure", figure: matches[0].key });
+    const ranked = searchFigures(query).filter(function(r) { return keyPasses(r.key); });
+    if (ranked.length && ranked[0].rank === 3) navigate({ name: "figure", figure: ranked[0].key });
   }
 
   // When lines are on AND a node is focused/hovered, dim all nodes that
@@ -298,236 +302,92 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   })();
 
   function passesPeopleFilters(n) {
-    if (!n.hasData) return genderF === "all" && archF === "all" && regionF === "all";
+    if (!n.hasData) return genderF === "all" && archF === "all" && regionF === "all" && relF === "all";
     const fig = DATA[n.key];
+    if (relF !== "all" && connectionOf(n.key).type !== relF) return false;
     if (genderF !== "all" && fig.gender !== genderF) return false;
     if (archF === "yes" && !fig.hasArchive) return false;
     if (archF === "no"  &&  fig.hasArchive) return false;
     if (regionF !== "all" && fig.region !== regionF) return false;
     return true;
   }
-  const peopleFiltersActive = genderF !== "all" || archF !== "all" || regionF !== "all";
-  const visibleCount = peopleFiltersActive
-    ? nodes.filter(function(n) { return n.hasData && passesPeopleFilters(n); }).length
-    : nodes.filter(function(n) { return n.hasData; }).length;
-  const totalDataCount = nodes.filter(function(n) { return n.hasData; }).length;
+  const peopleFiltersActive = genderF !== "all" || archF !== "all" || regionF !== "all" || relF !== "all";
+  const keyPasses = function(key) { const n = nodes.find(function(x) { return x.key === key; }); return n ? passesPeopleFilters(n) : true; };
 
   function nodeOpacity(n) {
-    if (q) return isMatch(n) ? 1 : 0.18;
+    if (q && !isMatch(n)) return 0.18;
     if (peopleFiltersActive && !passesPeopleFilters(n)) return 0.18;
     if (inFocusSet && n.key && !inFocusSet.has(n.key)) return 0.22;
     return 1;
   }
 
-  return (
-    <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "20px 14px" : "32px 20px", color: TX }}>
-      <style>{pwStyles}</style>
-      <a href="#web-main" className="elc-skip">Skip to content</a>
+  const shownCount = (q ? searchFigures(query).map(function(r) { return r.key; }) : DKEYS).filter(keyPasses).length;
 
-      <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-        <a href={hrefFor({ name: "landing" })} className="elc-btn">← Home</a>
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+  const group = function(label, value, set, opts) {
+    return (
+      <div role="group" aria-label={label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+        <span style={{ color: MUTED, fontSize: "14px", minWidth: "7em" }}>{label}</span>
+        {opts.map(function(opt) {
+          return <button key={opt[0]} type="button" className="elc-btn" aria-pressed={value === opt[0]} style={{ fontSize: "14px", padding: "5px 10px" }} onClick={function() { set(opt[0]); }}>{opt[1]}</button>;
+        })}
       </div>
+    );
+  };
 
-      <main id="web-main" tabIndex={-1} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", outline: "none" }}>
-      <h1 style={{
-        color: ACCENT,
-        fontSize: isMobile ? "34px" : "44px",
-        fontWeight: 600,
-        margin: "0 0 8px",
-        letterSpacing: "0.005em",
-        textAlign: "center",
-        lineHeight: 1.1
-      }}>
-        The Philosophical Web
-      </h1>
-      <p style={{ color: TX_SOFT, fontSize: isMobile ? "17px" : "19px", margin: "0 0 6px", textAlign: "center", maxWidth: "720px", lineHeight: 1.45, fontStyle: "italic" }}>
-        A map of the figures around Ella Lyman Cabot
-      </p>
-      <p style={{ color: MUTED, fontSize: "14px", fontStyle: "italic", margin: "0 0 18px", textAlign: "center" }}>
-        Select a figure to open its entry. Every figure is also listed by name below the map.
+  return (
+    <Page current="web" theme={theme} onToggleTheme={onToggleTheme} width="1100px">
+      <style>{pwStyles}</style>
+      <h1 style={{ color: ACCENT, fontSize: isMobile ? "34px" : "40px", fontWeight: 600, margin: "0 0 6px", lineHeight: 1.1 }}>Map</h1>
+      <p style={{ color: TX_SOFT, fontSize: "17px", margin: "0 0 16px", maxWidth: "46em" }}>
+        The figures around Ella Lyman Cabot. Each sits in a ring showing how close the editor judges their position to hers;
+        its relationship to Cabot is a separate label, explained below.
       </p>
 
-      <form onSubmit={onSubmit} role="search" aria-label="Search figures" style={{
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        gap: "10px",
-        alignItems: isMobile ? "stretch" : "center",
-        justifyContent: "center",
-        marginBottom: "10px",
-        width: "100%",
-        maxWidth: "640px"
-      }}>
-        <input
-          type="search"
-          className="pw-search"
-          placeholder="Search names or entry text"
-          aria-label="Search figures"
-          value={query}
-          onChange={function(e) { setQuery(e.target.value); }}
-          style={isMobile ? { width: "100%" } : { flex: "1 1 220px", minWidth: 0 }}
-        />
-        <button
-          type="button"
-          className="elc-btn"
-          aria-pressed={linesMode !== "off"}
-          aria-label={"Lines: " + linesMode + ". Click to cycle to next mode."}
-          style={isMobile ? { justifyContent: "center" } : undefined}
-          onClick={function() {
-            setLinesMode(function(m) {
-              if (m === "off") return "all";
-              if (m === "all") return "focus";
-              return "off";
-            });
-          }}>
-          Lines: {linesMode === "off" ? "Off" : linesMode === "all" ? "All" : "Focus"}
-        </button>
-        <button
-          type="button"
-          className="elc-btn"
-          aria-label="Open a random figure"
-          style={isMobile ? { justifyContent: "center" } : undefined}
-          onClick={function() {
-            const idx = Math.floor(Math.random() * DKEYS.length);
-            navigate({ name: "figure", figure: DKEYS[idx] });
-          }}>
-          Random
-        </button>
+      <form onSubmit={onSubmit} role="search" aria-label="Search and filter figures" style={{ display: "flex", flexWrap: "wrap", gap: "10px 14px", alignItems: "flex-end", marginBottom: "8px" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <label htmlFor="pw-q" style={{ display: "block", color: MUTED, fontSize: "14px", marginBottom: "4px" }}>Search names and entry text</label>
+          <input id="pw-q" type="search" className="pw-search" value={query} onChange={function(e) { setQuery(e.target.value); }} style={{ width: "100%", boxSizing: "border-box" }} />
+        </div>
+        <div>
+          <label htmlFor="pw-rel" style={{ display: "block", color: MUTED, fontSize: "14px", marginBottom: "4px" }}>Relationship to Cabot</label>
+          <select id="pw-rel" className="pw-search" value={relF} onChange={function(e) { setRelF(e.target.value); }}>
+            <option value="all">All relationships</option>
+            {Object.keys(CONNECTION_TYPES).map(function(k) { return <option key={k} value={k}>{CONNECTION_TYPES[k].label}</option>; })}
+          </select>
+        </div>
+        <div role="group" aria-label="View" style={{ display: "flex", gap: "6px" }}>
+          <button type="button" className="elc-btn" aria-pressed={view === "map"} onClick={function() { setView("map"); }}>Map</button>
+          <button type="button" className="elc-btn" aria-pressed={view === "list"} onClick={function() { setView("list"); }}>List</button>
+        </div>
       </form>
 
-      {linesMode !== "off" && (
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "6px",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "10px",
-          maxWidth: "720px",
-          padding: "0 12px"
-        }}>
-          <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", marginRight: "4px" }}>Rings</span>
-          {[0, 1, 2, 3, 4].map(function(ri) {
-            const enabled = enabledRings[ri];
-            const c = ri === 4 ? OUTER_COLOR : RING_COLORS[ri];
-            const labels = ["Ring I", "Ring II", "Ring III", "Ring IV", "Ring V"];
-            return (
-              <button key={ri}
-                type="button"
-                className="elc-btn"
-                aria-pressed={enabled}
-                style={{
-                  fontSize: "14px",
-                  padding: "5px 10px",
-                  opacity: enabled ? 1 : 0.55,
-                  textDecoration: enabled ? "none" : "line-through"
-                }}
-                onClick={function() {
-                  setEnabledRings(function(prev) {
-                    const next = prev.slice();
-                    next[ri] = !next[ri];
-                    if (!next.some(Boolean)) return prev;
-                    return next;
-                  });
-                }}>
-                <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: enabled ? c : "transparent", border: "1.5px solid " + c, marginRight: "6px", verticalAlign: "middle", boxSizing: "border-box" }} />
-                {labels[ri]}
-              </button>
-            );
-          })}
+      <details style={{ marginBottom: "10px" }}>
+        <summary style={{ cursor: "pointer", color: TX, fontSize: "15px", padding: "6px 0" }}>More filters{peopleFiltersActive && (genderF !== "all" || archF !== "all" || regionF !== "all") ? " (active)" : ""}</summary>
+        <div style={{ padding: "8px 0 4px" }}>
+          {group("Gender", genderF, setGenderF, [["all","All"],["m","Men"],["f","Women"]])}
+          {group("Region", regionF, setRegionF, [["all","All"],["American-NE","New England"],["American-Other","Elsewhere in the US"],["British","British"],["French","French"],["German","German"],["Greek","Greek"],["Other","Other"]])}
+          {group("Archival references listed in the entry", archF, setArchF, [["all","All"],["yes","Listed"],["no","None listed"]])}
+          {view === "map" && group("Connection lines", linesMode, setLinesMode, [["off","Off"],["all","All"],["focus","Focused figure only"]])}
+          <p style={{ margin: "6px 0 0", fontSize: "14px" }}>
+            <button type="button" className="elc-btn" style={{ fontSize: "14px", padding: "4px 10px" }} onClick={function() { navigate({ name: "figure", figure: DKEYS[Math.floor(Math.random() * DKEYS.length)] }); }}>Open a random entry</button>
+            {peopleFiltersActive && <button type="button" className="elc-btn" style={{ fontSize: "14px", padding: "4px 10px", marginLeft: "8px" }} onClick={function() { setGenderF("all"); setArchF("all"); setRegionF("all"); setRelF("all"); }}>Clear filters</button>}
+          </p>
         </div>
-      )}
+      </details>
 
-      <section aria-label="Filter people" style={{
-        width: "100%",
-        maxWidth: "780px",
-        marginBottom: "12px",
-        padding: isMobile ? "10px 12px" : "10px 16px",
-        background: SURF,
-        border: "1px solid " + BORD,
-        borderRadius: "6px",
-        boxSizing: "border-box"
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "10px",
-          marginBottom: "8px"
-        }}>
-          <span style={{ color: ACCENT, fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "13px", letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600 }}>Filter people</span>
-          {peopleFiltersActive && (
-            <button type="button" className="elc-btn"
-              style={{ fontSize: "13px", padding: "5px 10px" }}
-              onClick={function() { setGenderF("all"); setArchF("all"); setRegionF("all"); }}>
-              Reset
-            </button>
-          )}
-        </div>
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          flexWrap: isMobile ? "nowrap" : "wrap",
-          gap: isMobile ? "10px" : "10px 20px",
-          alignItems: isMobile ? "stretch" : "center"
-        }}>
-          {[
-            { label: "Gender",  value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
-            { label: "Archive", value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
-            { label: "Region",  value: regionF, set: setRegionF, opts: [["all","All"],["American-NE","Am · NE"],["American-Other","Am · Other"],["British","British"],["French","French"],["German","German"],["Greek","Greek"],["Other","Other"]] },
-          ].map(function(group, gi) {
-            return (
-              <div key={gi} role="group" aria-label={group.label} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: MUTED, fontSize: "13px", letterSpacing: "0.16em", textTransform: "uppercase", minWidth: isMobile ? "64px" : "auto" }}>{group.label}</span>
-                {group.opts.map(function(opt) {
-                  const pressed = group.value === opt[0];
-                  return (
-                    <button key={opt[0]}
-                      type="button"
-                      className="elc-btn"
-                      aria-pressed={pressed}
-                      style={{ fontSize: "14px", padding: "7px 12px", opacity: pressed ? 1 : 0.7 }}
-                      onClick={function() { group.set(opt[0]); }}>
-                      {opt[1]}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <p role="status" aria-live="polite" style={{ color: TX_SOFT, fontSize: "15px", margin: "0 0 12px" }}>
+        {shownCount === 0 ? "No figures match." : shownCount + (shownCount === 1 ? " figure" : " figures") + (q || peopleFiltersActive ? " match." : ".")}
+        {q && view === "map" && shownCount > 0 && <> Matches are highlighted; <button type="button" className="elc-btn" style={{ fontSize: "14px", padding: "2px 8px" }} onClick={function() { setView("list"); }}>show them as a list</button></>}
+        {!q && view === "map" && tip && <> {(function() { const n = nodes.find(function(x) { return x.name === tip; }); return n && n.key ? fullName(n.key) : tip; })()}</>}
+      </p>
 
-      {peopleFiltersActive && (
-        <div role="status" aria-live="polite" style={{ marginBottom: "6px", textAlign: "center" }}>
-          <span style={{ color: MUTED, fontSize: "13px", fontStyle: "italic" }}>
-            {visibleCount} of {totalDataCount} figures match
-          </span>
-        </div>
-      )}
-
-      <div role="status" aria-live="polite" style={{ minHeight: "28px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "6px", maxWidth: "640px", textAlign: "center", padding: "0 12px" }}>
-        {q && (
-          <span style={{ color: MUTED, fontSize: "14px", fontStyle: "italic" }}>
-            {matchCount === 0 ? "No figures match" :
-             matchCount === 1 ? "1 match. Press Enter to open it." :
-             matchCount + " matches"}
-          </span>
-        )}
-        {!q && tip && (
-          <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "4px", padding: "6px 16px", color: TX, fontSize: "16px" }}>
-            {(function() { const n = nodes.find(function(x) { return x.name === tip; }); return n && n.key ? fullName(n.key) : tip; })()}
-          </div>
-        )}
-      </div>
-
-      {q && (
-        <section aria-labelledby="pw-results" style={{ width: "100%", maxWidth: "640px", marginBottom: "16px", background: SURF, border: "1px solid " + BORD, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
-          <h2 id="pw-results" className="elc-eyebrow">Search results</h2>
-          <FigureList query={query} headingId="pw-results" />
+      {view === "list" ? (
+        <section aria-labelledby="pw-list">
+          <h2 id="pw-list" className="elc-eyebrow">{q ? "Results, best matches first" : "All figures, alphabetical"}</h2>
+          <FigureList query={query} headingId="pw-list" filter={keyPasses} />
         </section>
-      )}
-
+      ) : (
+        <>
       <div style={{ width: "100%", maxWidth: "1100px" }}>
         <svg viewBox={vb} style={{ width: "100%", height: "auto", overflow: "visible" }} role="group" aria-label="Map of figures around Ella Lyman Cabot, arranged in five rings. Each figure is a link to its entry.">
           <rect x="-220" y="-30" width="1400" height="1020" fill={BG} />
@@ -697,22 +557,13 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
           );
         })}
       </div>
+        </>
+      )}
 
-      <div style={{ marginTop: "20px", maxWidth: "720px", width: "100%" }}>
+      <div style={{ marginTop: "28px", maxWidth: "720px" }}>
         <ConnectionKey compact />
       </div>
-
-      <div style={{ marginTop: "20px", maxWidth: "720px", width: "100%" }}>
-        <MapIntroduction />
-      </div>
-
-      <section aria-labelledby="pw-all" style={{ marginTop: "28px", maxWidth: "720px", width: "100%" }}>
-        <h2 id="pw-all" className="elc-eyebrow">All figures, A to Z</h2>
-        <FigureList query="" headingId="pw-all" />
-      </section>
-
-      </main>
-      <Footer inset="1100px" />
-    </div>
+      {MAP_INTRODUCTION && <div style={{ marginTop: "16px", maxWidth: "720px" }}><MapIntroduction /></div>}
+    </Page>
   );
 }
