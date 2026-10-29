@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, CITED_BY } from "../data/figures";
-import { RINGS_CFG, OUTER_CFG } from "../data/rings";
+import { RINGS_CFG, OUTER_CFG, RING_NAMES } from "../data/rings";
+import { CONNECTION_TYPES, connectionOf, fullName } from "../data/connections";
+import { EVIDENCE } from "../data/evidence";
 import {
   BG, SURF, BORD, ACCENT, ACCENT_FAINT,
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER,
@@ -80,7 +82,9 @@ export default function DetailView({ name, theme, onToggleTheme }) {
 
   const isOuter = fig.ring === 5;
   const ringColor = isOuter ? OUTER_COLOR : (RING_COLORS[fig.ring - 1] || RING_COLORS[0]);
-  const ringLabel = isOuter ? "Ring V" : "Ring " + fig.ring;
+  const ringLabel = ["Ring I", "Ring II", "Ring III", "Ring IV", "Ring V"][fig.ring - 1];
+  const conn = connectionOf(name);
+  const evidence = EVIDENCE[name];
   const siblings = findSiblings(name);
   const citedBy = CITED_BY[name] || [];
 
@@ -118,24 +122,24 @@ export default function DetailView({ name, theme, onToggleTheme }) {
             <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
             <a href={hrefFor({ name: "web" })} style={{ color: MUTED, textDecoration: "none", borderBottom: "1px dotted currentColor" }}>Web</a>
             <span aria-hidden="true" style={{ margin: "0 6px" }}>›</span>
-            <span style={{ color: ringColor }}>{ringLabel}</span>
+            <span><span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: ringColor, marginRight: "5px" }} />{ringLabel}</span>
           </nav>
-          <h2 style={{
+          <h1 style={{
             color: ACCENT,
             fontSize: isMobile ? "28px" : "34px",
             fontWeight: 600,
             margin: 0,
             letterSpacing: "0.005em",
             lineHeight: 1.15
-          }}>{name}</h2>
+          }}>{fullName(name)}</h1>
           <p style={{ color: TX_SOFT, fontSize: "15px", margin: "4px 0 0", lineHeight: 1.4, fontStyle: "italic" }}>
-            {fig.dates} · <span style={{ color: ringColor }}>{fig.title}</span>
+            {fig.dates.replace(/[\u2013\u2014]/g, "-")} · {fig.title}
           </p>
         </div>
         {!isMobile && <ThemeToggle theme={theme} onToggle={onToggleTheme} />}
       </header>
 
-      <main id="detail-main" style={{ padding: isMobile ? "20px 16px" : "32px 24px", maxWidth: COL, margin: "0 auto", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}>
+      <main id="detail-main" tabIndex={-1} style={{ padding: isMobile ? "20px 16px" : "32px 24px", maxWidth: COL, margin: "0 auto", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "20px" }}>
 
         {!fig.confirmed && (
           <aside role="note" style={{
@@ -157,19 +161,55 @@ export default function DetailView({ name, theme, onToggleTheme }) {
           </aside>
         )}
 
+        <section aria-labelledby="placement" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "16px 22px" }}>
+          <h2 id="placement" className="elc-eyebrow">Place in the map</h2>
+          <p style={{ color: TX, fontSize: "16px", lineHeight: 1.6, margin: "0 0 6px" }}>
+            <span aria-hidden="true" style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "50%", background: ringColor, marginRight: "8px" }} />
+            <strong>{RING_NAMES[fig.ring - 1]}.</strong> The editor's judgment of how close this position is to Cabot's.
+          </p>
+          <p style={{ color: TX, fontSize: "16px", lineHeight: 1.6, margin: 0 }}>
+            <strong>{CONNECTION_TYPES[conn.type].label}.</strong> {conn.basis}
+          </p>
+        </section>
+
         <section aria-label="Their position" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-          <h3 className="elc-eyebrow">Their Position</h3>
+          <h2 className="elc-eyebrow">Their position</h2>
           <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.desc}</p>
         </section>
 
-        <section aria-label="Connection to ELC" style={{ background: ACCENT_FAINT, borderRadius: "6px", border: "1px solid var(--accent-border)", padding: "20px 22px" }}>
-          <h3 className="elc-eyebrow">★ Connection to ELC</h3>
-          <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.elc}</p>
+        <section aria-labelledby="connection" style={{ background: ACCENT_FAINT, borderRadius: "6px", border: "1px solid var(--accent-border)", padding: "20px 22px" }}>
+          <h2 id="connection" className="elc-eyebrow">★ Connection to Cabot</h2>
+          {evidence ? (
+            <>
+              <h3 className="elc-eyebrow" style={{ fontSize: "12px", marginTop: "4px" }}>Documentary findings</h3>
+              <ol style={{ margin: "0 0 16px", paddingLeft: "1.3em" }}>
+                {evidence.documented.map(function(c, i) {
+                  return (
+                    <li key={i} style={{ color: TX, fontSize: "17px", lineHeight: 1.6, marginBottom: "10px" }}>
+                      {c.text}
+                      <span style={{ display: "block", color: TX_SOFT, fontSize: "14px", fontStyle: "italic" }}>
+                        {c.source ? "Source: " + c.source : "Source: citation being added from the editor's archival notes."}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>The editor's interpretation</h3>
+              <p style={{ color: TX, fontSize: "17px", lineHeight: 1.65, margin: 0 }}>{evidence.interpretation}</p>
+            </>
+          ) : (
+            <>
+              <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.elc}</p>
+              <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "12px 0 0" }}>
+                This paragraph combines archival findings with the editor's interpretation. Archival references, where they exist, are listed under Archives below.
+              </p>
+            </>
+          )}
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
           <section aria-label="Influences on them" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h3 className="elc-eyebrow">Influences On Them</h3>
+            <h2 className="elc-eyebrow">Influences on them</h2>
             {fig.inf.map(function(item, i) {
               return (
                 <div key={i} style={{ marginBottom: "12px" }}>
@@ -180,13 +220,13 @@ export default function DetailView({ name, theme, onToggleTheme }) {
             })}
           </section>
           <section aria-label="Transmissions toward ELC" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h3 className="elc-eyebrow">Transmissions Toward ELC</h3>
+            <h2 className="elc-eyebrow">Transmissions toward Cabot</h2>
             {fig.out.map(function(item, i) {
               const isELC = item[0] === "ELC";
               const targetKey = DATA[item[0]] ? item[0] : null;
               const inner = (
                 <>
-                  <span style={{ color: isELC ? ACCENT : ringColor, fontSize: "17px", fontWeight: 600 }}>
+                  <span style={{ color: isELC ? ACCENT : TX, fontSize: "17px", fontWeight: 600 }}>
                     {isELC ? "★ ELC" : item[0]}
                     {targetKey && <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>}
                   </span>
@@ -205,7 +245,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
         </div>
 
         <section aria-label="Lineage flow" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-          <h3 className="elc-eyebrow">Lineage Flow</h3>
+          <h2 className="elc-eyebrow">Lineage</h2>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             {fig.inf.slice(0, 3).map(function(item, i) {
               return (
@@ -215,7 +255,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
               );
             })}
             <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
-            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "4px", padding: "6px 14px", color: ringColor, fontSize: "16px", fontWeight: 600 }}>
+            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "4px", padding: "6px 14px", color: TX, fontSize: "16px", fontWeight: 600 }}>
               {name}
             </span>
             <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
@@ -232,7 +272,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
 
         {fig.works && fig.works.length > 0 && (
           <section aria-label="Selected works" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h3 className="elc-eyebrow">Selected Works</h3>
+            <h2 className="elc-eyebrow">Selected works</h2>
             {fig.works.map(function(item, i) {
               return (
                 <div key={i} style={{ marginBottom: "10px" }}>
@@ -246,7 +286,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
 
         {fig.archives && fig.archives.length > 0 && (
           <section aria-label="Archives" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h3 className="elc-eyebrow">Archives</h3>
+            <h2 className="elc-eyebrow">Archives</h2>
             {fig.archives.map(function(item, i) {
               return (
                 <div key={i} style={{ marginBottom: "12px" }}>
@@ -263,9 +303,9 @@ export default function DetailView({ name, theme, onToggleTheme }) {
 
         {citedBy.length > 0 && (
           <section aria-label="Cited by other entries" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h3 className="elc-eyebrow">Cited by</h3>
+            <h2 className="elc-eyebrow">Cited by</h2>
             <p style={{ color: MUTED, fontSize: "14px", margin: "0 0 14px", fontStyle: "italic" }}>
-              Figures whose entry treats {name} as an influence or reference point.
+              Figures whose entry treats {fullName(name)} as an influence or reference point.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               {citedBy.map(function(item, i) {
@@ -273,8 +313,9 @@ export default function DetailView({ name, theme, onToggleTheme }) {
                 const fromColor = (fromFig.ring === 5 ? OUTER_COLOR : RING_COLORS[fromFig.ring - 1] || RING_COLORS[0]);
                 return (
                   <a key={i} href={hrefFor({ name: "figure", figure: item.from })} className="elc-figure-link">
-                    <span style={{ color: fromColor, fontSize: "17px", fontWeight: 600 }}>
-                      {item.from}
+                    <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>
+                      <span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: fromColor, marginRight: "6px" }} />
+                      {fullName(item.from)}
                       <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>
                     </span>
                     <span style={{ color: MUTED, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item.note}</span>

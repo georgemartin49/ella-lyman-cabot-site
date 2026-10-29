@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
-import { RINGS_CFG, OUTER_CFG, CX, CY } from "../data/rings";
+import { RINGS_CFG, OUTER_CFG, RING_NAMES, CX, CY } from "../data/rings";
+import { CONNECTION_TYPES, connectionOf, fullName } from "../data/connections";
+import FigureList, { matchesQuery } from "./FigureList";
+import ConnectionKey from "./ConnectionKey";
 import {
   BG, SURF, BORD, ACCENT,
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER, GOLD, GOLD_TEXT,
@@ -17,7 +20,7 @@ const pwStyles = `
   .pw-node .pw-ring { transition: r 200ms ease, stroke-opacity 200ms ease, stroke-width 200ms ease; }
   .pw-node text { transition: fill 200ms ease; }
   .pw-node-active:hover { transform: translateZ(0); }
-  .pw-node-active:focus-visible { outline: none; }
+  .pw-node-active:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   .pw-node-active:focus-visible .pw-dot {
     stroke: var(--accent); stroke-width: 1.5; stroke-opacity: 0.9;
   }
@@ -42,20 +45,27 @@ const pwStyles = `
 `;
 
 function nodePos(radius, idx, total) {
-  const angle = (360 / total) * idx * Math.PI / 180;
+  // Offset by half a step so no node sits at 12 o'clock, where the ring numeral is.
+  const angle = (360 / total) * (idx + 0.5) * Math.PI / 180;
   return { x: CX + radius * Math.sin(angle), y: CY - radius * Math.cos(angle) };
 }
 
-function textAnchor(x) {
-  const d = x - CX;
-  if (Math.abs(d) < 30) return "middle";
-  return d > 0 ? "start" : "end";
-}
-
-function textX(x) {
-  const d = x - CX;
-  if (Math.abs(d) < 30) return x;
-  return x + (d > 0 ? 22 : -22);
+// Where a node's label goes. On the crowded ring (Ring II, 28 figures) names
+// run outward along the radius, like spokes, so neighbours never overlap.
+// Elsewhere they sit beside the dot, or below it at the bottom of the circle.
+function labelPlacement(x, y, total) {
+  const dx = x - CX;
+  const dy = y - CY;
+  if (total > 12) {
+    const r = Math.hypot(dx, dy) || 1;
+    const lx = CX + dx * (r + 14) / r;
+    const ly = CY + dy * (r + 14) / r;
+    const deg = Math.atan2(dy, dx) * 180 / Math.PI;
+    const right = dx >= 0;
+    return { x: lx, y: ly + 5, anchor: right ? "start" : "end", rotate: (right ? deg : deg + 180) + " " + lx + " " + ly, small: true };
+  }
+  if (Math.abs(dx) < 8) return dy > 0 ? { x: x, y: y + 28, anchor: "middle" } : { x: x, y: y - 16, anchor: "middle" };
+  return { x: x + (dx > 0 ? 18 : -18), y: y + 6, anchor: dx > 0 ? "start" : "end" };
 }
 
 function findKey(shortName) {
@@ -72,7 +82,7 @@ function buildNodes() {
       const p = nodePos(ring.rad, ni, ring.nodes.length);
       const key = findKey(name);
       out.push({
-        name, x: p.x, y: p.y,
+        name, x: p.x, y: p.y, label: labelPlacement(p.x, p.y, ring.nodes.length),
         ringIdx: ri,
         color: RING_COLORS[ri],
         key,
@@ -85,7 +95,7 @@ function buildNodes() {
     const p = nodePos(OUTER_CFG.rad, ni, OUTER_CFG.nodes.length);
     const key = findKey(name);
     out.push({
-      name, x: p.x, y: p.y,
+      name, x: p.x, y: p.y, label: labelPlacement(p.x, p.y, OUTER_CFG.nodes.length),
       ringIdx: 4,
       color: OUTER_COLOR,
       key,
@@ -241,12 +251,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   function isMatch(node) {
     if (!q) return true;
     if (node.name.toLowerCase().includes(q)) return true;
-    const fig = node.key && DATA[node.key];
-    if (!fig) return false;
-    if (fig.desc && fig.desc.toLowerCase().includes(q)) return true;
-    if (fig.elc && fig.elc.toLowerCase().includes(q)) return true;
-    if (fig.title && fig.title.toLowerCase().includes(q)) return true;
-    return false;
+    return Boolean(node.key && DATA[node.key] && matchesQuery(node.key, q));
   }
   const matchCount = q ? nodes.filter(function(n) { return n.hasData && isMatch(n); }).length : 0;
 
@@ -321,12 +326,14 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   return (
     <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "20px 14px" : "32px 20px", color: TX }}>
       <style>{pwStyles}</style>
+      <a href="#web-main" className="elc-skip">Skip to content</a>
 
       <div style={{ width: "100%", maxWidth: "1100px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
         <a href={hrefFor({ name: "landing" })} className="elc-btn">← Home</a>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
+      <main id="web-main" tabIndex={-1} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", outline: "none" }}>
       <h1 style={{
         color: ACCENT,
         fontSize: isMobile ? "34px" : "44px",
@@ -339,10 +346,10 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         The Philosophical Web
       </h1>
       <p style={{ color: TX_SOFT, fontSize: isMobile ? "17px" : "19px", margin: "0 0 6px", textAlign: "center", maxWidth: "720px", lineHeight: 1.45, fontStyle: "italic" }}>
-        Ella Lyman Cabot · Interest, the Achieved Self, and the Conditions of Selfhood
+        A map of the figures around Ella Lyman Cabot
       </p>
       <p style={{ color: MUTED, fontSize: "14px", fontStyle: "italic", margin: "0 0 18px", textAlign: "center" }}>
-        Working document — still being updated · Tap any node to explore lineages
+        Select a figure to open its entry. Every figure is also listed by name below the map.
       </p>
 
       <form onSubmit={onSubmit} role="search" aria-label="Search figures" style={{
@@ -358,7 +365,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         <input
           type="search"
           className="pw-search"
-          placeholder="Search names or text…"
+          placeholder="Search names or entry text"
           aria-label="Search figures"
           value={query}
           onChange={function(e) { setQuery(e.target.value); }}
@@ -508,21 +515,29 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         {q && (
           <span style={{ color: MUTED, fontSize: "14px", fontStyle: "italic" }}>
             {matchCount === 0 ? "No figures match" :
-             matchCount === 1 ? "1 match — press Enter to open" :
+             matchCount === 1 ? "1 match. Press Enter to open it." :
              matchCount + " matches"}
           </span>
         )}
         {!q && tip && (
           <div style={{ background: SURF, border: "1px solid " + BORD, borderRadius: "4px", padding: "6px 16px", color: TX, fontSize: "16px" }}>
-            {tip}
+            {(function() { const n = nodes.find(function(x) { return x.name === tip; }); return n && n.key ? fullName(n.key) : tip; })()}
           </div>
         )}
       </div>
 
+      {q && (
+        <section aria-labelledby="pw-results" style={{ width: "100%", maxWidth: "640px", marginBottom: "16px", background: SURF, border: "1px solid " + BORD, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
+          <h2 id="pw-results" className="elc-eyebrow">Search results</h2>
+          <FigureList query={query} headingId="pw-results" />
+        </section>
+      )}
+
       <div style={{ width: "100%", maxWidth: "1100px" }}>
-        <svg viewBox={vb} style={{ width: "100%", height: "auto", overflow: "visible" }} role="img" aria-label="Philosophical web of figures connected to Ella Lyman Cabot. Click or focus a node to explore.">
+        <svg viewBox={vb} style={{ width: "100%", height: "auto", overflow: "visible" }} role="group" aria-label="Map of figures around Ella Lyman Cabot, arranged in five rings. Each figure is a link to its entry.">
           <rect x="-220" y="-30" width="1400" height="1020" fill={BG} />
 
+          <g aria-hidden="true">
           {[0,30,60,90,120,150,180,210,240,270,300,330].map(function(deg) {
             const rad = deg * Math.PI / 180;
             return (
@@ -540,7 +555,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
                 <circle cx={CX} cy={CY} r={ring.cr}
                   fill="none" stroke={RING_COLORS[ri]} strokeWidth="2.2" strokeOpacity="0.55" />
                 <text
-                  x={CX} y={CY - ring.cr - 8}
+                  x={CX} y={CY - ring.cr + 22}
                   textAnchor="middle"
                   fill={RING_COLORS[ri]}
                   fontFamily="'Cormorant Garamond', Georgia, serif"
@@ -558,7 +573,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             fill="none" stroke={OUTER_COLOR} strokeWidth="2.4" strokeOpacity="0.65"
             strokeDasharray="10 6" />
           <text
-            x={CX} y={CY - OUTER_CFG.cr - 8}
+            x={CX} y={CY - OUTER_CFG.cr + 22}
             textAnchor="middle"
             fill={OUTER_COLOR}
             fontFamily="'Cormorant Garamond', Georgia, serif"
@@ -568,6 +583,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             letterSpacing="2">
             V
           </text>
+          </g>
 
           {linesMode !== "off" && (
             <g aria-hidden="true">
@@ -589,10 +605,12 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             </g>
           )}
 
+          <g aria-hidden="true">
           <circle cx={CX} cy={CY} r="60" fill={GOLD} opacity="0.14" />
           <circle cx={CX} cy={CY} r="48" fill={GOLD} opacity="0.95" />
           <text x={CX} y={CY + 4} textAnchor="middle" fill={GOLD_TEXT} fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="28" fontWeight="600" letterSpacing="2">ELC</text>
-          <text x={CX} y={CY + 28} textAnchor="middle" fill={GOLD_TEXT} fontSize="13" opacity="0.85" letterSpacing="1">1866–1934</text>
+          <text x={CX} y={CY + 28} textAnchor="middle" fill={GOLD_TEXT} fontSize="13" opacity="0.85" letterSpacing="1">1866-1934</text>
+          </g>
 
           {nodes.map(function(n, i) {
             const isHov = tip === n.name;
@@ -600,10 +618,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             const ringR = n.isOuter ? (isHov ? 12 : 10) : (isHov ? 14 : 11);
             const dotR = n.isOuter ? (isHov ? 7 : 5) : (isHov ? 9 : 6);
             const dotFill = n.isOuter ? OUTER_COLOR : n.color;
-            const labelColor = n.isOuter
-              ? (isHov ? OUTER_COLOR : TX_SOFT)
-              : (isHov ? n.color : TX);
-            const fontSize = n.isOuter ? 16 : 18;
+            // Ring colours are too pale for text; a hovered label turns the accent colour instead.
+            const labelColor = isHov ? ACCENT : (n.isOuter ? TX_SOFT : TX);
+            const fontSize = n.isOuter ? 16 : (n.label.small ? 15 : 18);
 
             const visuals = (
               <>
@@ -620,8 +637,10 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
                   opacity={isHov ? 1 : (n.isOuter ? 0.92 : 0.85)}
                   className="pw-dot" />
                 <text
-                  x={textX(n.x)} y={n.y + 6}
-                  textAnchor={textAnchor(n.x)}
+                  x={n.label.x} y={n.label.y}
+                  textAnchor={n.label.anchor}
+                  transform={n.label.rotate ? "rotate(" + n.label.rotate + ")" : undefined}
+                  className={n.label.small ? "pw-label pw-label-radial" : "pw-label"}
                   fill={labelColor}
                   fontFamily="'EB Garamond', Georgia, serif"
                   fontSize={fontSize}
@@ -634,7 +653,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
             // Decorative-only nodes (no data): plain <g>, no interactivity.
             if (!n.hasData) {
               return (
-                <g key={i} className="pw-node" style={{ opacity }}>
+                <g key={i} className="pw-node" style={{ opacity }} aria-hidden="true">
                   {visuals}
                 </g>
               );
@@ -648,8 +667,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
                 id={"pw-node-" + n.key}
                 href={href}
                 className="pw-node pw-node-active"
-                role="button"
-                aria-label={"View " + n.name}
+                aria-label={fullName(n.key) + ", " + RING_NAMES[n.ringIdx] + ", " + CONNECTION_TYPES[connectionOf(n.key).type].label}
                 onMouseEnter={function() { setTip(n.name); }}
                 onMouseLeave={function() { setTip(null); }}
                 onFocus={function() { setTip(n.name); }}
@@ -659,7 +677,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
                   navigate({ name: "figure", figure: n.key });
                 }}
                 onKeyDown={function(e) { handleNodeKey(e, n); }}
-                style={{ cursor: "pointer", outline: "none", opacity }}>
+                style={{ cursor: "pointer", opacity }}>
                 {visuals}
               </a>
             );
@@ -669,12 +687,12 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px 24px", maxWidth: "560px", width: "100%", marginTop: "20px" }}>
         {[
-          { color: RING_COLORS[0], label: "Ring I — Closest Allies" },
-          { color: RING_COLORS[1], label: "Ring II — Substantial Agreement" },
-          { color: RING_COLORS[2], label: "Ring III — Partial Agreement" },
-          { color: RING_COLORS[3], label: "Ring IV — Objectors" },
-          { color: OUTER_COLOR,    label: "Ring V — Same Outcome, Different Vocab" },
-          { color: GOLD,           label: "ELC — Starting Point" },
+          { color: RING_COLORS[0], label: RING_NAMES[0] },
+          { color: RING_COLORS[1], label: RING_NAMES[1] },
+          { color: RING_COLORS[2], label: RING_NAMES[2] },
+          { color: RING_COLORS[3], label: RING_NAMES[3] },
+          { color: OUTER_COLOR,    label: RING_NAMES[4] },
+          { color: GOLD,           label: "Ella Lyman Cabot, at the center" },
         ].map(function(item, i) {
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -685,13 +703,23 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         })}
       </div>
 
-      <aside role="note" style={{ marginTop: "20px", maxWidth: "560px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
+      <div style={{ marginTop: "20px", maxWidth: "720px", width: "100%" }}>
+        <ConnectionKey compact />
+      </div>
+
+      <aside role="note" style={{ marginTop: "20px", maxWidth: "720px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
         <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
         <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
-          <strong style={{ color: WARN }}>Still Being Updated.</strong> Entries marked ⚠ in detail view contain claims that are working hypotheses or inferences pending archival verification. All other entries draw from established scholarship and primary sources.
+          <strong style={{ color: WARN }}>A work in progress.</strong> Each entry summarizes the figure's position and the editor's account of their relation to Cabot. Archival references are given where they exist, and documentary claims are being given individual citations entry by entry. Entries marked ⚠ contain claims still awaiting archival verification.
         </p>
       </aside>
 
+      <section aria-labelledby="pw-all" style={{ marginTop: "28px", maxWidth: "720px", width: "100%" }}>
+        <h2 id="pw-all" className="elc-eyebrow">All figures, A to Z</h2>
+        <FigureList query="" headingId="pw-all" />
+      </section>
+
+      </main>
       <Footer inset="1100px" />
     </div>
   );

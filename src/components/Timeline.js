@@ -5,7 +5,8 @@ import {
   BG, SURF, BORD, ACCENT, TX, TX_SOFT, MUTED, GOLD,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
-import { hrefFor, navigate } from "../router";
+import { hrefFor } from "../router";
+import { fullName } from "../data/connections";
 import ThemeToggle from "./ThemeToggle";
 import Footer from "./Footer";
 
@@ -59,9 +60,9 @@ export default function Timeline({ theme, onToggleTheme }) {
   const ZOOM_PRESETS = [
     { id:"all",       label:"All",        from:1700, to:null },
     { id:"pre1850",   label:"Pre-1850",   from:1700, to:1850 },
-    { id:"1800-1900", label:"1800–1900",  from:1800, to:1900 },
-    { id:"1850-1950", label:"1850–1950",  from:1850, to:1950 },
-    { id:"1900-2000", label:"1900–2000",  from:1900, to:2000 },
+    { id:"1800-1900", label:"1800-1900",  from:1800, to:1900 },
+    { id:"1850-1950", label:"1850-1950",  from:1850, to:1950 },
+    { id:"1900-2000", label:"1900-2000",  from:1900, to:2000 },
     { id:"post1950",  label:"Post-1950",  from:1950, to:null },
   ];
   const [zoomId, setZoomId] = useState("all");
@@ -157,6 +158,7 @@ export default function Timeline({ theme, onToggleTheme }) {
   return (
     <div style={{ background: BG, minHeight: "100vh", color: TX, display: "flex", flexDirection: "column" }}>
       <a href="#timeline-main" className="elc-skip">Skip to content</a>
+      <style>{".tl-row:focus { outline: none; } .tl-row:focus-visible .tl-hit, .tl-row:hover .tl-hit { fill: var(--accent-faint); stroke: var(--accent); stroke-width: 2; }"}</style>
 
       <div style={{
         width: "100%",
@@ -173,7 +175,7 @@ export default function Timeline({ theme, onToggleTheme }) {
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
 
-      <main id="timeline-main" style={{
+      <main id="timeline-main" tabIndex={-1} style={{
         width: "100%",
         maxWidth: "1100px",
         margin: "0 auto",
@@ -195,7 +197,7 @@ export default function Timeline({ theme, onToggleTheme }) {
           Modern figures plotted by lifespan, 1700 onward. ELC marked. Tap any bar to open that entry.
         </p>
         <p style={{ color: MUTED, fontSize: "13px", fontStyle: "italic", margin: "0 0 20px", textAlign: "center" }}>
-          A complementary view to the Philosophical Web — lineage by decade rather than by ring.
+          A companion to the Philosophical Web, arranged by date rather than by ring. A full list of figures is on the <a href={hrefFor({ name: "figures" })}>A to Z page</a>.
         </p>
 
         <div style={{
@@ -316,8 +318,8 @@ export default function Timeline({ theme, onToggleTheme }) {
           <svg
             viewBox={"0 0 " + W + " " + H}
             style={{ width: "100%", height: "auto", minWidth: isMobile ? "640px" : "auto", display: "block" }}
-            role="img"
-            aria-label="Timeline of figures by lifespan, with ELC's lifespan highlighted">
+            role="group"
+            aria-label="Timeline of figures by lifespan, with Cabot's lifetime highlighted. Each row is a link to that figure's entry.">
 
             {ticks.map(function(year) {
               const x = xFor(year);
@@ -354,7 +356,7 @@ export default function Timeline({ theme, onToggleTheme }) {
               fontWeight="600"
               fontSize="14"
               letterSpacing="2">
-              ELC · {ELC.start}–{ELC.end}
+              Cabot · {ELC.start}-{ELC.end}
             </text>
 
             {(function() {
@@ -382,22 +384,22 @@ export default function Timeline({ theme, onToggleTheme }) {
                   const xe = xFor(e.end);
                   const w = Math.max(4, xe - xs);
                   const labelY = y + ROW_H / 2 + 4;
-                  // Compose label: "Name — Title" if it'll fit; else just name.
-                  const fullLabel = e.key + e.suffix + (e.title ? "  ·  " + e.title : "");
+                  // The label is the short name only, so it always fits the margin;
+                  // the full name, dates, and title are in the link's accessible name and tooltip.
+                  const description = fullName(e.key) + e.suffix + ", " + e.dates.replace(/[\u2013\u2014]/g, "-") + (e.title ? ", " + e.title : "");
                   rendered.push(
-                    <g key={"row-" + si + "-" + i}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={"View " + e.key + ", " + e.dates + (e.title ? ", " + e.title : "")}
-                      onClick={function() { navigate({ name: "figure", figure: e.key }); }}
-                      onKeyDown={function(ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); navigate({ name: "figure", figure: e.key }); } }}
+                    <a key={"row-" + si + "-" + i}
+                      href={hrefFor({ name: "figure", figure: e.key })}
+                      aria-label={description}
+                      className="tl-row"
                       style={{ cursor: "pointer" }}>
-                      <rect x={0} y={y} width={W} height={ROW_H} fill="transparent" />
+                      <title>{description}</title>
+                      <rect x={0} y={y} width={W} height={ROW_H} fill="transparent" className="tl-hit" />
                       <text x={PAD_L - 8} y={labelY} textAnchor="end"
                         fill="var(--text)"
                         fontFamily="'EB Garamond', Georgia, serif"
                         fontSize={isMobile ? "13" : "14"}>
-                        {isMobile ? (e.key + e.suffix) : fullLabel}
+                        {e.key + e.suffix}
                       </text>
                       <rect x={xs} y={y + 6} width={w} height={ROW_H - 12}
                         rx="3"
@@ -409,7 +411,7 @@ export default function Timeline({ theme, onToggleTheme }) {
                           {e.start < 0 ? Math.abs(e.start) + " BC" : e.start}
                         </text>
                       )}
-                    </g>
+                    </a>
                   );
                   cursor += ROW_H;
                 });
