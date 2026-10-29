@@ -20,4 +20,20 @@ const EVIDENCE = {
   },
 };
 
-export { EVIDENCE };
+// Philosophical comparisons, set out as: a passage from Cabot, a passage from
+// the other author, the editor's interpretation, and a difference or limit.
+//   cabot / other: { text, source }   interpretation: string   limit: string
+// Missing parts are shown as "to be added". The interpretation defaults to the
+// entry's connection paragraph.
+const COMPARISONS = {
+  Ubuntu: {
+    interpretation: "No historical connection. The comparison is the editor's: Menkiti's thesis that personhood is achieved rather than given can be set beside Cabot's claim that the self is achieved.",
+    limit: "For Menkiti, personhood is conferred and measured by the community; Cabot begins from the individual's own interests and treats social engagement as a condition of their growth.",
+  },
+  Korsgaard: {
+    interpretation: "No historical connection. Korsgaard writes within Kantian ethics, Cabot within Boston idealism some seventy years earlier, and both treat the self as constituted through action rather than given before it.",
+    limit: "Korsgaard's account concerns the unity of the agent in action; Cabot's concerns the growth of a self across a life.",
+  },
+};
+
+export { EVIDENCE, COMPARISONS };

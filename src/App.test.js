@@ -48,3 +48,30 @@ test('the Royce entry separates documented findings, with sources, from interpre
   expect(screen.getByRole('heading', { name: "The editor's interpretation" })).toBeInTheDocument();
   expect(screen.getAllByText(/^Source: Schlesinger Library/).length).toBeGreaterThan(0);
 });
+
+test('no entry lists itself among its own influences', () => {
+  DKEYS.forEach(key => {
+    (DATA[key].inf || []).forEach(item => {
+      expect([key, fullName(key)]).not.toContain(item[0]);
+    });
+  });
+});
+
+test('Eliot submitted his dissertation and the 1964 publication is not called posthumous', () => {
+  const text = JSON.stringify(DATA['T.S. Eliot']);
+  expect(text).toMatch(/submitted his dissertation/);
+  expect(text).not.toMatch(/never submitted|posthumous/);
+});
+
+test('a comparison entry sets out passages, interpretation, and a limit, and claims no influence', () => {
+  visit('#/figure/Weil');
+  expect(screen.getByText(/No historical contact or influence is claimed/)).toBeInTheDocument();
+  ['From Cabot', 'From Simone Weil', "The editor's interpretation", 'A difference or limit']
+    .forEach(h => expect(screen.getByRole('heading', { name: h })).toBeInTheDocument());
+  expect(screen.queryByRole('heading', { name: /Transmissions/ })).toBeNull();
+});
+
+test('old addresses of split or renamed entries still open them', () => {
+  visit('#/figure/' + encodeURIComponent('Hume/Parfit'));
+  expect(screen.getByRole('heading', { level: 1, name: 'David Hume' })).toBeInTheDocument();
+});

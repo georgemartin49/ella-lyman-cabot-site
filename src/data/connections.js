@@ -8,11 +8,19 @@
 // figure's own entry says about the connection, and awaits the editor's review.
 
 const CONNECTION_TYPES = {
-  contact:    { label: "Documented contact",       desc: "Personal acquaintance, teaching, family, or correspondence recorded in the archives." },
-  reading:    { label: "Documented reading",       desc: "Her papers show she read, studied, or wrote about this figure's work." },
-  influence:  { label: "Probable influence",       desc: "Likely reached her indirectly, through teachers or the tradition she worked in, but not documented in her papers." },
-  comparison: { label: "Philosophical comparison", desc: "An interpretive comparison drawn by the editor. No historical contact or influence is claimed." },
+  contact:    { label: "Personal or intellectual association", evidence: "Letters, notebooks, testimony",
+                desc: "Teaching, family, friendship, or correspondence recorded in the archives." },
+  reading:    { label: "Documented reading", evidence: "A citation, reading record, or annotated book",
+                desc: "Her papers show she read, studied, or wrote about this figure's work." },
+  influence:  { label: "Probable influence", evidence: "A documented route, such as a teacher, and the editor's argument",
+                desc: "Likely reached her indirectly, through teachers or the tradition she worked in, but not documented in her papers." },
+  comparison: { label: "Philosophical comparison", evidence: "Passages from both authors and the editor's argument",
+                desc: "An interpretive comparison drawn by the editor. No historical contact or influence is claimed." },
+  reception:  { label: "Later reception", evidence: "Evidence that the person engaged with Cabot's work",
+                desc: "Someone who read, cited, or responded to Cabot after her lifetime." },
 };
+// Connection types that record a historical link to Cabot (drawn as lines on the map).
+const HISTORICAL = { contact: true, reading: true, influence: true, reception: true };
 
 const COMPARISON = "A comparison drawn by the editor. No historical contact or influence is claimed.";
 
@@ -32,6 +40,7 @@ const CONNECTION = {
   Kant:           ["reading", "Studied in Royce's course, by her own account."],
   Sidgwick:       ["reading", "The opponent in her thesis “The Place of Pleasure” for Royce's class."],
   Dewey:          ["reading", "Read from 1891; she visited his Laboratory School in 1898."],
+  Stoicism:       ["reading", "Her notes contrast Stoic acceptance with rejoicing in God's will (A-139/359)."],
   "T.H. Green":   ["influence", "Reached her through Palmer's teaching, in the editor's reading."],
   Hegel:          ["influence", "Reached her through Royce and the idealist tradition, not read directly as far as is known."],
   Peirce:         ["influence", "Inferred to have reached her through Royce; she does not mention him in her transcribed papers."],
@@ -57,9 +66,9 @@ const NAMES = {
   Thompson: "Anna Boynton Thompson", Haldane: "Richard Burdon Haldane", Hegel: "G. W. F. Hegel", Dewey: "John Dewey",
   Kant: "Immanuel Kant", Peirce: "Charles Sanders Peirce", Sartre: "Jean-Paul Sartre", Bradley: "F. H. Bradley",
   "C.I. Lewis": "Clarence Irving Lewis", "T.S. Eliot": "T. S. Eliot", Sidgwick: "Henry Sidgwick",
-  "Hume/Parfit": "David Hume and Derek Parfit", "Moore/Russell": "G. E. Moore and Bertrand Russell",
+  Hume: "David Hume", Parfit: "Derek Parfit", "Moore/Russell": "G. E. Moore and Bertrand Russell",
   Metzinger: "Thomas Metzinger", "Foucault(E)": "Michel Foucault", Mencius: "Mencius",
-  "Epictetus/M.A.": "Epictetus and Marcus Aurelius", Ubuntu: "Ubuntu philosophy", Buber: "Martin Buber",
+  Stoicism: "Stoicism (Epictetus and Marcus Aurelius)", Ubuntu: "Ubuntu traditions", Buber: "Martin Buber",
   "Maine de Biran": "Maine de Biran", Freire: "Paulo Freire", Bakhtin: "Mikhail Bakhtin", Addams: "Jane Addams",
   Parker: "DeWitt H. Parker", "De Laguna": "Grace de Laguna", Perry: "Ralph Barton Perry",
   Schiller: "F. C. S. Schiller", "F. Kelley": "Florence Kelley",
@@ -70,7 +79,7 @@ function fullName(key) { return NAMES[key] || key; }
 // Sort key for the A to Z list: the surname, unless overridden here.
 const SORT_AS = {
   "Du Bois": "Du Bois", "De Laguna": "de Laguna", "Maine de Biran": "Maine de Biran", Ubuntu: "Ubuntu",
-  "Hume/Parfit": "Hume", "Moore/Russell": "Moore", "Epictetus/M.A.": "Epictetus", Alain: "Alain",
+  "Moore/Russell": "Moore", Stoicism: "Stoicism", Alain: "Alain",
 };
 function sortName(key) {
   return SORT_AS[key] || fullName(key).split(" ").pop();
@@ -81,4 +90,4 @@ function connectionOf(key) {
   return c ? { type: c[0], basis: c[1] } : { type: "comparison", basis: COMPARISON };
 }
 
-export { CONNECTION_TYPES, connectionOf, fullName, sortName, NAMES };
+export { CONNECTION_TYPES, HISTORICAL, connectionOf, fullName, sortName, NAMES };

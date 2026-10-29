@@ -5,6 +5,7 @@ import DetailView from "./components/DetailView";
 import Timeline from "./components/Timeline";
 import FigureIndex from "./components/FigureIndex";
 import { fullName } from "./data/connections";
+import { ALIASES } from "./data/figures";
 import { useRoute } from "./router";
 import useTheme from "./hooks/useTheme";
 
@@ -17,7 +18,7 @@ export default function App() {
     if (route.name === "web") document.title = "The Philosophical Web · " + base;
     else if (route.name === "timeline") document.title = "Timeline · " + base;
     else if (route.name === "figures") document.title = "Figures A to Z · " + base;
-    else if (route.name === "figure") document.title = fullName(route.figure) + " · " + base;
+    else if (route.name === "figure") document.title = fullName(ALIASES[route.figure] || route.figure) + " · " + base;
     else document.title = base;
   }, [route]);
 

@@ -1,6 +1,6 @@
 import useIsMobile from "../hooks/useIsMobile";
 import {
-  BG, SURF, BORD, ACCENT, ACCENT_SOFT,
+  BG, SURF, BORD, ACCENT,
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
@@ -84,7 +84,7 @@ export default function Landing({ theme, onToggleTheme }) {
           </p>
         </header>
 
-        <div aria-hidden="true" style={{ textAlign: "center", color: ACCENT_SOFT, fontSize: "22px", letterSpacing: "0.4em", margin: "0" }}>· · ·</div>
+        <div aria-hidden="true" style={{ textAlign: "center", color: ACCENT, fontSize: "22px", letterSpacing: "0.4em", margin: "0" }}>· · ·</div>
 
         <section aria-labelledby="bio" style={panel} className="lp-prose">
           <h2 id="bio" className="elc-eyebrow">Her life</h2>
@@ -128,6 +128,19 @@ export default function Landing({ theme, onToggleTheme }) {
           </p>
         </section>
 
+        <section aria-labelledby="words" style={panel} className="lp-prose">
+          <h2 id="words" className="elc-eyebrow">In her own words</h2>
+          <blockquote style={{ margin: "0 0 14px", paddingLeft: "16px", borderLeft: "2px solid var(--accent-border)" }}>
+            <p style={{ fontStyle: "italic" }}>&ldquo;The art of living is to become other.&rdquo;</p>
+            <p style={{ fontSize: "15px", color: TX_SOFT }}>Notebook, 1892. Schlesinger Library, Papers of Ella Lyman Cabot, A-139, folder 320.</p>
+          </blockquote>
+          <blockquote style={{ margin: "0 0 14px", paddingLeft: "16px", borderLeft: "2px solid var(--accent-border)" }}>
+            <p style={{ fontStyle: "italic" }}>&ldquo;Reading Emerson's Oversoul Self-Reliance &amp; the Divinity School Address (at about 16) first changed my conception of God.&rdquo;</p>
+            <p style={{ fontSize: "15px", color: TX_SOFT }}>Autobiographical note. Schlesinger Library, Papers of Ella Lyman Cabot, A-139, folder 278v.</p>
+          </blockquote>
+          <p style={{ fontSize: "15px", color: TX_SOFT, fontStyle: "italic" }}>A longer passage, edited from her manuscripts, will be added here.</p>
+        </section>
+
         <section aria-labelledby="read" style={panel}>
           <h2 id="read" className="elc-eyebrow">Read her writings</h2>
           {BOOKS.map(function(b) { return <Cite key={b.title} item={b} />; })}
@@ -142,6 +155,12 @@ export default function Landing({ theme, onToggleTheme }) {
             philosophical manuscripts, correspondence, poetry, and notebooks. This site is a companion research resource. Its
             entries record the people around her and the thinkers her work can be compared with, together with the archival
             evidence for each connection, as the work toward the edition proceeds.
+          </p>
+          <p>
+            {EDITOR.name} has reviewed and transcribed all of the Ella Lyman Cabot Papers at the Schlesinger Library
+            (A-139). The work in the Richard Clarke Cabot Papers at the Harvard University Archives (HUG 4255) includes
+            approximately 16,000 photographs, roughly 7,000 of which already have transcriptions; it continues, with
+            attention to the Cabots' correspondence, shared reading, and Ada Peirce McCormick's unpublished biographical drafts.
           </p>
           <p>
             <a href={EDITOR.edition}>About the Cabot edition</a>
@@ -186,8 +205,10 @@ export default function Landing({ theme, onToggleTheme }) {
         <aside role="note" style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "10px 14px" }}>
           <span aria-hidden="true" style={{ color: WARN, fontSize: "16px", flexShrink: 0, lineHeight: 1.4 }}>⚠</span>
           <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
-            <strong style={{ color: WARN }}>A work in progress.</strong> Entries are being revised so that each documentary claim
-            carries its own citation. Entries with claims still awaiting archival verification are flagged individually.
+            <strong style={{ color: WARN }}>Project status.</strong> This resource is being revised so that every documentary
+            claim carries its own citation and every comparison sets out passages from both authors. Ring placements and
+            comparisons are the editor's provisional judgments. Entries with claims still awaiting archival verification are
+            flagged individually.
           </p>
         </aside>
 

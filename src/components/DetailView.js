@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
-import { DATA, CITED_BY } from "../data/figures";
+import { DATA, CITED_BY, ALIASES } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, RING_NAMES } from "../data/rings";
 import { CONNECTION_TYPES, connectionOf, fullName } from "../data/connections";
-import { EVIDENCE } from "../data/evidence";
+import { EVIDENCE, COMPARISONS } from "../data/evidence";
 import {
   BG, SURF, BORD, ACCENT, ACCENT_FAINT,
   TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER,
@@ -36,7 +36,57 @@ function findSiblings(name) {
 
 const COL = "720px";
 
-export default function DetailView({ name, theme, onToggleTheme }) {
+// One line in an influence list, linked when the person has an entry.
+function Related({ item }) {
+  const key = DATA[item[0]] ? item[0] : null;
+  const inner = (
+    <>
+      <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>
+        {key ? fullName(key) : item[0]}
+        {key && <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>}
+      </span>
+      <span style={{ color: TX_SOFT, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
+    </>
+  );
+  return (
+    <div style={{ marginBottom: "8px" }}>
+      {key ? <a href={hrefFor({ name: "figure", figure: key })} className="elc-figure-link">{inner}</a>
+           : <div style={{ padding: "4px 8px", margin: "-4px -8px 6px" }}>{inner}</div>}
+    </div>
+  );
+}
+
+// A philosophical comparison, set out in four parts. Parts the editor has not
+// yet supplied are marked as such rather than left out.
+function Comparison({ name, fig }) {
+  const c = COMPARISONS[name] || {};
+  const part = { color: TX, fontSize: "17px", lineHeight: 1.65, margin: "0 0 14px" };
+  const pending = { color: TX_SOFT, fontSize: "15px", fontStyle: "italic", margin: "0 0 14px" };
+  const Passage = function({ p, who }) {
+    return p
+      ? <blockquote style={{ ...part, margin: "0 0 14px", paddingLeft: "14px", borderLeft: "2px solid var(--accent-border)" }}>{p.text}<span style={{ display: "block", color: TX_SOFT, fontSize: "14px", fontStyle: "italic" }}>{p.source}</span></blockquote>
+      : <p style={pending}>A passage from {who} is to be added.</p>;
+  };
+  return (
+    <>
+      <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "0 0 14px" }}>
+        An interpretive comparison by the editor. No historical contact or influence is claimed.
+      </p>
+      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>From Cabot</h3>
+      <Passage p={c.cabot} who="Cabot" />
+      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>From {fullName(name)}</h3>
+      <Passage p={c.other} who={fig.kind === "tradition" ? "this tradition" : fullName(name)} />
+      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>The editor's interpretation</h3>
+      <p style={part}>{c.interpretation || fig.elc}</p>
+      <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>A difference or limit</h3>
+      {c.limit ? <p style={{ ...part, marginBottom: 0 }}>{c.limit}</p> : <p style={{ ...pending, marginBottom: 0 }}>To be added.</p>}
+    </>
+  );
+}
+
+export default function DetailView({ name: requested, theme, onToggleTheme }) {
+  // Entries that were split or renamed keep working at their old address.
+  const name = ALIASES[requested] || requested;
   const fig = DATA[name];
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
@@ -64,7 +114,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
     if (!canShare) { copyLink(); return; }
     navigator.share({
       title: name + " · Ella Lyman Cabot",
-      text: fig ? (fig.title + " — " + fig.dates) : name,
+      text: fig ? (fig.title + ", " + fig.dates) : name,
       url: window.location.href,
     }).catch(function() { /* user cancelled */ });
   }
@@ -75,7 +125,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
         <p style={{ color: TX_SOFT, fontSize: "18px", marginBottom: "20px" }}>
           No entry found for <strong style={{ color: TX }}>{name}</strong>.
         </p>
-        <a href={hrefFor({ name: "web" })} className="elc-btn">← Back to the Web</a>
+        <a href={hrefFor({ name: "figures" })} className="elc-btn">All figures, A to Z</a>
       </div>
     );
   }
@@ -86,6 +136,8 @@ export default function DetailView({ name, theme, onToggleTheme }) {
   const conn = connectionOf(name);
   const evidence = EVIDENCE[name];
   const siblings = findSiblings(name);
+  const influences = fig.inf || [];
+  const influenced = (fig.out || []).filter(function(item) { return item[0] !== "ELC"; });
   const citedBy = CITED_BY[name] || [];
 
   const headerInline = isMobile
@@ -153,7 +205,7 @@ export default function DetailView({ name, theme, onToggleTheme }) {
           }}>
             <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
             <div>
-              <p style={{ color: WARN, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.16em", margin: "0 0 4px", fontWeight: 600 }}>Still Being Updated</p>
+              <p style={{ color: WARN, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.16em", margin: "0 0 4px", fontWeight: 600 }}>Claims awaiting verification</p>
               <p style={{ color: TX_SOFT, fontSize: "15px", lineHeight: 1.55, margin: 0 }}>
                 {fig.unconfirmedNote || "Some claims in this entry are working hypotheses or inferences pending further archival verification."}
               </p>
@@ -197,6 +249,8 @@ export default function DetailView({ name, theme, onToggleTheme }) {
               <h3 className="elc-eyebrow" style={{ fontSize: "12px" }}>The editor's interpretation</h3>
               <p style={{ color: TX, fontSize: "17px", lineHeight: 1.65, margin: 0 }}>{evidence.interpretation}</p>
             </>
+          ) : conn.type === "comparison" ? (
+            <Comparison name={name} fig={fig} />
           ) : (
             <>
               <p style={{ color: TX, fontSize: "18px", lineHeight: 1.7, margin: 0 }}>{fig.elc}</p>
@@ -207,68 +261,39 @@ export default function DetailView({ name, theme, onToggleTheme }) {
           )}
         </section>
 
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
-          <section aria-label="Influences on them" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 className="elc-eyebrow">Influences on them</h2>
-            {fig.inf.map(function(item, i) {
+        {fig.readings && fig.readings.length > 0 && (
+          <section aria-labelledby="readings" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+            <h2 id="readings" className="elc-eyebrow">Key authors and texts</h2>
+            {fig.readings.map(function(item, i) {
               return (
-                <div key={i} style={{ marginBottom: "12px" }}>
+                <div key={i} style={{ marginBottom: "10px" }}>
                   <span style={{ color: TX, fontSize: "17px", fontWeight: 600 }}>{item[0]}</span>
-                  <span style={{ color: MUTED, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
+                  <span style={{ color: TX_SOFT, fontSize: "15px", display: "block", lineHeight: 1.5, fontStyle: "italic" }}>{item[1]}</span>
                 </div>
               );
             })}
           </section>
-          <section aria-label="Transmissions toward ELC" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-            <h2 className="elc-eyebrow">Transmissions toward Cabot</h2>
-            {fig.out.map(function(item, i) {
-              const isELC = item[0] === "ELC";
-              const targetKey = DATA[item[0]] ? item[0] : null;
-              const inner = (
-                <>
-                  <span style={{ color: isELC ? ACCENT : TX, fontSize: "17px", fontWeight: 600 }}>
-                    {isELC ? "★ ELC" : item[0]}
-                    {targetKey && <span aria-hidden="true" style={{ color: MUTED, marginLeft: "6px", fontSize: "13px", fontWeight: 400 }}>→</span>}
-                  </span>
-                  <span style={{ color: MUTED, fontSize: "15px", display: "block", lineHeight: 1.5 }}>{item[1]}</span>
-                </>
-              );
-              return (
-                <div key={i} style={{ marginBottom: "8px" }}>
-                  {targetKey
-                    ? <a href={hrefFor({ name: "figure", figure: targetKey })} className="elc-figure-link">{inner}</a>
-                    : <div style={{ padding: "4px 8px", margin: "-4px -8px 6px" }}>{inner}</div>}
-                </div>
-              );
-            })}
-          </section>
-        </div>
+        )}
 
-        <section aria-label="Lineage flow" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
-          <h2 className="elc-eyebrow">Lineage</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            {fig.inf.slice(0, 3).map(function(item, i) {
-              return (
-                <span key={i} style={{ background: BG, border: "1px solid " + BORD, borderRadius: "4px", padding: "6px 12px", color: TX, fontSize: "15px" }}>
-                  {item[0]}
-                </span>
-              );
-            })}
-            <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
-            <span style={{ background: ringColor + "22", border: "1px solid " + ringColor, borderRadius: "4px", padding: "6px 14px", color: TX, fontSize: "16px", fontWeight: 600 }}>
-              {name}
-            </span>
-            <span aria-hidden="true" style={{ color: MUTED, fontSize: "20px" }}>→</span>
-            {fig.out.slice(-2).map(function(item, i) {
-              const isELC = item[0] === "ELC";
-              return (
-                <span key={i} style={{ background: isELC ? ACCENT_FAINT : BG, border: "1px solid " + (isELC ? ACCENT : BORD), borderRadius: "4px", padding: "6px 12px", color: isELC ? ACCENT : TX, fontSize: "15px", fontWeight: isELC ? 600 : 400 }}>
-                  {item[0]}
-                </span>
-              );
-            })}
+        {(influences.length > 0 || influenced.length > 0) && (
+          <div style={{ display: "grid", gridTemplateColumns: isMobile || !influences.length || !influenced.length ? "1fr" : "1fr 1fr", gap: "16px" }}>
+            {influences.length > 0 && (
+              <section aria-labelledby="influences" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+                <h2 id="influences" className="elc-eyebrow">Influences on them</h2>
+                {influences.map(function(item, i) { return <Related key={i} item={item} />; })}
+              </section>
+            )}
+            {influenced.length > 0 && (
+              <section aria-labelledby="influenced" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>
+                <h2 id="influenced" className="elc-eyebrow">Their influence on others</h2>
+                <p style={{ color: TX_SOFT, fontSize: "14px", fontStyle: "italic", margin: "0 0 12px" }}>
+                  Later thinkers and developments; their relation to Cabot is given above.
+                </p>
+                {influenced.map(function(item, i) { return <Related key={i} item={item} />; })}
+              </section>
+            )}
           </div>
-        </section>
+        )}
 
         {fig.works && fig.works.length > 0 && (
           <section aria-label="Selected works" style={{ background: SURF, borderRadius: "6px", border: "1px solid " + BORD, padding: "20px 22px" }}>

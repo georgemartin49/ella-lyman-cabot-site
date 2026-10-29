@@ -132,7 +132,7 @@ export default function Timeline({ theme, onToggleTheme }) {
   const span = Math.max(1, maxYear - minYear);
 
   const W = 1000;
-  const PAD_L = isMobile ? 96 : 200;
+  const PAD_L = isMobile ? 150 : 200;
   const PAD_R = 16;
   const ROW_H = 30;
   const SECTION_GAP = 24;
@@ -367,7 +367,7 @@ export default function Timeline({ theme, onToggleTheme }) {
                   rendered.push(
                     <g key={"head-" + si}>
                       <text x={PAD_L - 8} y={cursor + 16} textAnchor="end"
-                        fill={section.color}
+                        fill="var(--text)"
                         fontFamily="'Cormorant Garamond', Georgia, serif"
                         fontSize="16" fontWeight="600" letterSpacing="2">
                         {section.label}
@@ -405,12 +405,6 @@ export default function Timeline({ theme, onToggleTheme }) {
                         rx="3"
                         fill={e.color}
                         opacity="0.85" />
-                      {/* Year endpoints inside the bar when it's wide enough */}
-                      {w > 60 && (
-                        <text x={xs + 6} y={labelY} fill="var(--bg)" fontSize="11" fontFamily="'EB Garamond', Georgia, serif" opacity="0.85">
-                          {e.start < 0 ? Math.abs(e.start) + " BC" : e.start}
-                        </text>
-                      )}
                     </a>
                   );
                   cursor += ROW_H;

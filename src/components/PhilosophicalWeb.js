@@ -2,12 +2,12 @@ import { useState, useMemo, useEffect } from "react";
 import useIsMobile from "../hooks/useIsMobile";
 import { DATA, DKEYS } from "../data/figures";
 import { RINGS_CFG, OUTER_CFG, RING_NAMES, CX, CY } from "../data/rings";
-import { CONNECTION_TYPES, connectionOf, fullName } from "../data/connections";
+import { CONNECTION_TYPES, HISTORICAL, connectionOf, fullName } from "../data/connections";
 import FigureList, { matchesQuery } from "./FigureList";
-import ConnectionKey from "./ConnectionKey";
+import ConnectionKey, { MapIntroduction } from "./ConnectionKey";
 import {
   BG, SURF, BORD, ACCENT,
-  TX, TX_SOFT, MUTED, WARN, WARN_BG, WARN_BORDER, GOLD, GOLD_TEXT,
+  TX, TX_SOFT, MUTED, GOLD, GOLD_TEXT,
   RING_COLORS, OUTER_COLOR
 } from "../theme";
 import { hrefFor, navigate, replaceQuery } from "../router";
@@ -152,6 +152,7 @@ function buildEdges(nodes) {
     fig.out.forEach(function(item) {
       const targetName = item[0];
       if (targetName === "ELC") {
+        if (!HISTORICAL[connectionOf(src.key).type]) return;
         edges.push({ from: src, to: { x: CX, y: CY, name: "ELC", isCenter: true }, color: src.color, fromRingIdx: src.ringIdx });
         return;
       }
@@ -213,7 +214,6 @@ function serializeRings(enabled) {
 
 // People filters: "all" means no filter on that dimension.
 //   gender: "all" | "m" | "f"
-//   known:  "all" | "yes" | "no"
 //   arch:   "all" | "yes" | "no"
 const VALID_GENDER = { all:1, m:1, f:1 };
 const VALID_TRI    = { all:1, yes:1, no:1 };
@@ -226,7 +226,6 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   const [linesMode, setLinesMode] = useState(function() { return parseLinesMode(initialQuery && initialQuery.lines); });
   const [enabledRings, setEnabledRings] = useState(function() { return parseEnabledRings(initialQuery && initialQuery.rings); });
   const [genderF, setGenderF] = useState(function() { return parseGender(initialQuery && initialQuery.g); });
-  const [knownF, setKnownF] = useState(function() { return parseTri(initialQuery && initialQuery.k); });
   const [archF, setArchF] = useState(function() { return parseTri(initialQuery && initialQuery.a); });
   const [regionF, setRegionF] = useState(function() { return (initialQuery && initialQuery.r) || "all"; });
 
@@ -236,11 +235,10 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
       lines: linesMode === "off" ? "" : linesMode,
       rings: linesMode === "off" ? "" : serializeRings(enabledRings),
       g: genderF === "all" ? "" : genderF,
-      k: knownF === "all" ? "" : knownF,
       a: archF === "all" ? "" : archF,
       r: regionF === "all" ? "" : regionF,
     });
-  }, [query, linesMode, enabledRings, genderF, knownF, archF, regionF]);
+  }, [query, linesMode, enabledRings, genderF, archF, regionF]);
   const isMobile = useIsMobile();
   const vb = "-220 -30 1400 1020";
 
@@ -300,17 +298,15 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
   })();
 
   function passesPeopleFilters(n) {
-    if (!n.hasData) return genderF === "all" && knownF === "all" && archF === "all" && regionF === "all";
+    if (!n.hasData) return genderF === "all" && archF === "all" && regionF === "all";
     const fig = DATA[n.key];
     if (genderF !== "all" && fig.gender !== genderF) return false;
-    if (knownF === "yes" && !fig.wellKnown) return false;
-    if (knownF === "no"  &&  fig.wellKnown) return false;
     if (archF === "yes" && !fig.hasArchive) return false;
     if (archF === "no"  &&  fig.hasArchive) return false;
     if (regionF !== "all" && fig.region !== regionF) return false;
     return true;
   }
-  const peopleFiltersActive = genderF !== "all" || knownF !== "all" || archF !== "all" || regionF !== "all";
+  const peopleFiltersActive = genderF !== "all" || archF !== "all" || regionF !== "all";
   const visibleCount = peopleFiltersActive
     ? nodes.filter(function(n) { return n.hasData && passesPeopleFilters(n); }).length
     : nodes.filter(function(n) { return n.hasData; }).length;
@@ -463,7 +459,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
           {peopleFiltersActive && (
             <button type="button" className="elc-btn"
               style={{ fontSize: "13px", padding: "5px 10px" }}
-              onClick={function() { setGenderF("all"); setKnownF("all"); setArchF("all"); setRegionF("all"); }}>
+              onClick={function() { setGenderF("all"); setArchF("all"); setRegionF("all"); }}>
               Reset
             </button>
           )}
@@ -477,7 +473,6 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         }}>
           {[
             { label: "Gender",  value: genderF, set: setGenderF, opts: [["all","All"],["m","Men"],["f","Women"]] },
-            { label: "Known",   value: knownF,  set: setKnownF,  opts: [["all","All"],["yes","Well-known"],["no","Less-known"]] },
             { label: "Archive", value: archF,   set: setArchF,   opts: [["all","All"],["yes","With"],["no","Without"]] },
             { label: "Region",  value: regionF, set: setRegionF, opts: [["all","All"],["American-NE","Am · NE"],["American-Other","Am · Other"],["British","British"],["French","French"],["German","German"],["Greek","Greek"],["Other","Other"]] },
           ].map(function(group, gi) {
@@ -608,7 +603,7 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
           <g aria-hidden="true">
           <circle cx={CX} cy={CY} r="60" fill={GOLD} opacity="0.14" />
           <circle cx={CX} cy={CY} r="48" fill={GOLD} opacity="0.95" />
-          <text x={CX} y={CY + 4} textAnchor="middle" fill={GOLD_TEXT} fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="28" fontWeight="600" letterSpacing="2">ELC</text>
+          <text x={CX} y={CY + 4} textAnchor="middle" fill={GOLD_TEXT} fontFamily="'Cormorant Garamond', Georgia, serif" fontSize="24" fontWeight="600" letterSpacing="1">Cabot</text>
           <text x={CX} y={CY + 28} textAnchor="middle" fill={GOLD_TEXT} fontSize="13" opacity="0.85" letterSpacing="1">1866-1934</text>
           </g>
 
@@ -707,12 +702,9 @@ export default function PhilosophicalWeb({ theme, onToggleTheme, initialQuery })
         <ConnectionKey compact />
       </div>
 
-      <aside role="note" style={{ marginTop: "20px", maxWidth: "720px", width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", background: WARN_BG, border: "1px solid " + WARN_BORDER, borderRadius: "6px", padding: "12px 16px", boxSizing: "border-box" }}>
-        <span aria-hidden="true" style={{ color: WARN, fontSize: "18px", flexShrink: 0, lineHeight: 1.2 }}>⚠</span>
-        <p style={{ color: TX_SOFT, fontSize: "14px", lineHeight: 1.55, margin: 0 }}>
-          <strong style={{ color: WARN }}>A work in progress.</strong> Each entry summarizes the figure's position and the editor's account of their relation to Cabot. Archival references are given where they exist, and documentary claims are being given individual citations entry by entry. Entries marked ⚠ contain claims still awaiting archival verification.
-        </p>
-      </aside>
+      <div style={{ marginTop: "20px", maxWidth: "720px", width: "100%" }}>
+        <MapIntroduction />
+      </div>
 
       <section aria-labelledby="pw-all" style={{ marginTop: "28px", maxWidth: "720px", width: "100%" }}>
         <h2 id="pw-all" className="elc-eyebrow">All figures, A to Z</h2>

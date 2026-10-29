@@ -12,12 +12,12 @@ const RINGS_CFG = [
   { rad:330, cr:322, label:"Ring III: Partial agreement",
     nodes:["Hegel","Sartre","Dewey","Kant","Peirce","Bradley","C.I. Lewis","T.S. Eliot","De Laguna"] },
   { rad:404, cr:396, label:"Ring IV: Opposing positions",
-    nodes:["Hume/Parfit","Moore/Russell","Perry","Metzinger","Foucault(E)","Schiller","Sidgwick"] },
+    nodes:["Hume","Parfit","Moore/Russell","Perry","Metzinger","Foucault(E)","Schiller","Sidgwick"] },
 ];
 
 const OUTER_CFG = {
   rad:470, cr:462, label:"Ring V: Parallel positions in other traditions",
-  nodes:["Mencius","Epictetus/M.A.","Ubuntu","Buber","Maine de Biran","Freire","Bakhtin","Addams","F. Kelley"]
+  nodes:["Mencius","Stoicism","Ubuntu","Buber","Maine de Biran","Freire","Bakhtin","Addams","F. Kelley"]
 };
 
 const SZ = 960;
